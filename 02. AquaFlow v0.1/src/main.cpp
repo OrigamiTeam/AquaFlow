@@ -2,6 +2,7 @@
 #include <SPI.h>
 
 #define CALIBRATION2_PERIODS 10
+#define TDC7200_AVG_CYCLES 4.0
 
 #define TDC1000_CONFIG_1 0x01
 #define TDC1000_CONFIG_2 0x02
@@ -10,8 +11,6 @@
 
 #define TDC7200_CONFIG1 0x00
 #define TDC7200_CONFIG2 0x01
-
-#define TDC7200_AVG_CYCLES 16.0
 
 #define TDC7200_TIME1 0x10
 #define TDC7200_TIME2 0x12
@@ -64,7 +63,7 @@ uint32_t readRegister24(uint8_t _csb, uint8_t _registerAddress) {
   return _value;
 }
 
-float calculaTOF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _calibration1, uint32_t _calibration2) {
+float calculaToF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _calibration1, uint32_t _calibration2) {
   float _clockPeriod = 125.0; // em ns
 
   float _calCountAux1 = (float)_calibration2 - (float)_calibration1;
@@ -84,7 +83,7 @@ float calculaTOF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _ca
   return _tof;
 }
 
-/*void readTOF() {
+/*void readToF() {
   uint32_t _time1 = readRegister24(TDC7200CSB, TDC7200_TIME1);
   uint32_t _time2 = readRegister24(TDC7200CSB, TDC7200_TIME2);
   uint32_t _time3 = readRegister24(TDC7200CSB, TDC7200_TIME3);
@@ -133,42 +132,42 @@ float calculaTOF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _ca
   Serial.println("");
 
   if (_clock1) {
-    float _tof1 = calculaTOF(_time1, _time2, _clock1, _calibration1, _calibration2);
+    float _tof1 = calculaToF(_time1, _time2, _clock1, _calibration1, _calibration2);
     _tof1 = _tof1 / TDC7200_AVG_CYCLES;
     Serial.print("_tof1: ");
     Serial.println(_tof1, 6);
   }
 
   if (_clock2) {
-    float _tof2 = calculaTOF(_time2, _time3, _clock2, _calibration1, _calibration2);
+    float _tof2 = calculaToF(_time2, _time3, _clock2, _calibration1, _calibration2);
     _tof2 = _tof2 / TDC7200_AVG_CYCLES;
     Serial.print("_tof2: ");
     Serial.println(_tof2, 6);
   }
 
   if (_clock3) {
-    float _tof3 = calculaTOF(_time3, _time4, _clock3, _calibration1, _calibration2);
+    float _tof3 = calculaToF(_time3, _time4, _clock3, _calibration1, _calibration2);
     _tof3 = _tof3 / TDC7200_AVG_CYCLES;
     Serial.print("_tof3: ");
     Serial.println(_tof3, 6);
   }
 
   if (_clock4) {
-    float _tof4 = calculaTOF(_time4, _time5, _clock4, _calibration1, _calibration2);
+    float _tof4 = calculaToF(_time4, _time5, _clock4, _calibration1, _calibration2);
     _tof4 = _tof4 / TDC7200_AVG_CYCLES;
     Serial.print("_tof4: ");
     Serial.println(_tof4, 6);
   }
 
   if (_clock5) {
-    float _tof5 = calculaTOF(_time5, _time6, _clock5, _calibration1, _calibration2);
+    float _tof5 = calculaToF(_time5, _time6, _clock5, _calibration1, _calibration2);
     _tof5 = _tof5 / TDC7200_AVG_CYCLES;
     Serial.print("_tof5: ");
     Serial.println(_tof5, 6);
   }
 }*/
 
-float readTOF(uint8_t _tofNumber) {
+float readToF(uint8_t _tofNumber) {
   if (_tofNumber >= 1 && _tofNumber <= 5) {
     uint32_t _timeA = 0;
     uint32_t _timeB = 0;
@@ -225,7 +224,7 @@ float readTOF(uint8_t _tofNumber) {
     Serial.println("");*/
 
     if (_clock) {
-      float _tof = calculaTOF(_timeA, _timeB, _clock, _calibration1, _calibration2);
+      float _tof = calculaToF(_timeA, _timeB, _clock, _calibration1, _calibration2);
       _tof = _tof / TDC7200_AVG_CYCLES;
       
       /*Serial.print("_tof");
@@ -240,6 +239,35 @@ float readTOF(uint8_t _tofNumber) {
 
   }
   return 0.0;
+}
+
+float fluxoAgua(float _tUp, float _tDown) {
+
+  float _deltaToF = _tUp - _tDown;
+  float _velocidadeAuxA = _deltaToF / 1000.0;  // _deltaToF em us
+  float _velocidadeAuxB = _velocidadeAuxA * 2.196324; // em mm^2/us
+
+  float _velocidadeAuxC = _velocidadeAuxB / 124.0;  // em mm/us
+  float _velocidade = _velocidadeAuxC * 1000.0;  // em m/s
+
+  /*Serial.print("_deltaToF: ");
+  Serial.println(_deltaToF, 6);
+
+  Serial.print("_velocidadeAuxA: ");
+  Serial.println(_velocidadeAuxA, 6);
+
+  Serial.print("_velocidadeAuxB: ");
+  Serial.println(_velocidadeAuxB, 6);
+
+  Serial.print("_velocidadeAuxC: ");
+  Serial.println(_velocidadeAuxC, 6);
+
+  Serial.print("_velocidade: ");
+  Serial.println(_velocidade, 6);*/
+
+  float _fluxo = _velocidade * 6.785840; // em l/m
+
+  return _fluxo;
 }
 
 void writeRegister(uint8_t _csb,  uint8_t _registerAddress, uint8_t _value) {
@@ -291,7 +319,7 @@ void setup() {
   Serial.println("TDC1000EN = HIGH");
   delay(500);
 
-  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x60);
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x53);
   delay(100);
 
   writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x12);
@@ -301,6 +329,9 @@ void setup() {
   writeRegister(TDC1000CSB, TDC1000_TOF_0, 0xFF);
   delay(100);
 
+  digitalWrite(TDC1000EN, LOW);
+  Serial.println("TDC1000EN = LOW");
+
   digitalWrite(TDC7200EN, HIGH);
   Serial.println("TDC7200EN = HIGH");
   delay(500);
@@ -308,7 +339,7 @@ void setup() {
   //writeRegister(TDC7200CSB, TDC7200_CONFIG1, 0x02);
   //delay(100);
   
-  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x62);
+  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50);
   delay(100);
 
   digitalWrite(ledPin, HIGH);
@@ -318,7 +349,6 @@ void setup() {
 }
 
 void loop() {
-
   /*if (!digitalRead(btnPin)) {
     delay(20);
     if (!digitalRead(btnPin)) {
@@ -335,48 +365,57 @@ void loop() {
 
   delay(10);*/
 
-  //Serial.println("startMeasurement()");
+  Serial.println("\n\nstartMeasurement()");
+
+  digitalWrite(TDC1000EN, HIGH);
+  Serial.println("TDC1000EN = HIGH");
+  delay(50);
 
   startMeasurement();
-  delay(50);
+  //delay(50);
 
   while (digitalRead(TDC7200INT)) {
     delayMicroseconds(10);
   }
 
-  float _tof1BA = readTOF(1);
-  float _tof2BA = readTOF(2);
-  float _tof3BA = readTOF(3);
+  float _tof1BA = readToF(1);
+  /*float _tof2BA = readToF(2);
+  float _tof3BA = readToF(3);*/
 
   digitalWrite(ledPin, HIGH);
   delay(100);
   digitalWrite(ledPin, LOW);
 
   startMeasurement();
-  delay(50);
+  //delay(50);
 
   while (digitalRead(TDC7200INT)) {
     delayMicroseconds(10);
   }
 
-  float _tof1AB = readTOF(1);
-  float _tof2AB = readTOF(2);
-  float _tof3AB = readTOF(3);
+  float _tof1AB = readToF(1);
+  /*float _tof2AB = readToF(2);
+  float _tof3AB = readToF(3);*/
 
-  /*Serial.println("\nBA: ");
+  /*digitalWrite(TDC1000EN, LOW);
+  Serial.println("TDC1000EN = LOW");
+  delay(50);*/
+
+  Serial.println("\n--------------------\n");
+  Serial.println("BA: ");
 
   Serial.print("tof1: ");
   Serial.println(_tof1BA);
-  Serial.print("tof2: ");
+  /**Serial.print("tof2: ");
   Serial.println(_tof2BA);
   Serial.print("tof3: ");
-  Serial.println(_tof3BA);
+  Serial.println(_tof3BA);*/
 
   Serial.println("AB: ");
 
   Serial.print("tof1: ");
   Serial.println(_tof1AB);
-  Serial.print("tof2: ");
+  /*Serial.print("tof2: ");
   Serial.println(_tof2AB);
   Serial.print("tof3: ");
   Serial.println(_tof3AB);*/
@@ -384,15 +423,33 @@ void loop() {
   Serial.println("\nDelta ToF: ");
 
   float _deltaTof1 = _tof1BA - _tof1AB;
-  float _deltaTof2 = _tof2BA - _tof2AB;
-  float _deltaTof3 = _tof3BA - _tof3AB;
+  /*float _deltaTof2 = _tof2BA - _tof2AB;
+  float _deltaTof3 = _tof3BA - _tof3AB;**/
 
   Serial.print("1: ");
-  Serial.println(_deltaTof1, 0);
-  Serial.print("2: ");
-  Serial.println(_deltaTof2, 0);
+  Serial.println(_deltaTof1, 6);
+  /*Serial.print("2: ");
+  Serial.println(_deltaTof2, 6);
   Serial.print("3: ");
-  Serial.println(_deltaTof3, 0);
+  Serial.println(_deltaTof3, 6);*/
+
+  Serial.println("");
+
+  float _f1 = fluxoAgua(_tof1BA, _tof1AB);
+  Serial.print("f1: ");
+  Serial.println(_f1, 2);
+
+  Serial.println("");
+
+  /*float _f2 = fluxoAgua(_tof2BA, _tof2AB);
+  Serial.print("f2: ");
+  Serial.println(_f2, 2);
+
+  Serial.println("");
+
+  float _f3 = fluxoAgua(_tof3BA, _tof3AB);
+  Serial.print("f3: ");
+  Serial.println(_f3, 2);*/
 
   delay(1000);
 }
