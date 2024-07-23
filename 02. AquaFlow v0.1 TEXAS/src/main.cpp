@@ -2,10 +2,12 @@
 #include <SPI.h>
 
 #define CALIBRATION2_PERIODS 10
-#define TDC7200_AVG_CYCLES 4.0
+#define TDC7200_AVG_CYCLES 4.0 // media de 4 medidas
+//#define TDC7200_AVG_CYCLES 1.0
 
 #define TDC1000_CONFIG_1 0x01
 #define TDC1000_CONFIG_2 0x02
+#define TDC1000_CONFIG_3 0x03
 #define TDC1000_TOF_1 0x05
 #define TDC1000_TOF_0 0x06
 
@@ -319,11 +321,13 @@ void setup() {
   Serial.println("TDC1000EN = HIGH");
   delay(500);
 
-  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x53);
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x50); // media de 4 medidas
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x40); // medida unica
   delay(100);
-
   writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x12);
   delay(100);
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_3, 0x03);
+  //delay(100);
   writeRegister(TDC1000CSB, TDC1000_TOF_1, 0x03);
   delay(100);
   writeRegister(TDC1000CSB, TDC1000_TOF_0, 0xFF);
@@ -339,7 +343,8 @@ void setup() {
   //writeRegister(TDC7200CSB, TDC7200_CONFIG1, 0x02);
   //delay(100);
   
-  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50);
+  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50); // media de 4 medidas
+  //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x40); // medida unica
   delay(100);
 
   digitalWrite(ledPin, HIGH);
@@ -365,37 +370,43 @@ void loop() {
 
   delay(10);*/
 
-  Serial.println("\n\nstartMeasurement()");
-
   digitalWrite(TDC1000EN, HIGH);
   Serial.println("TDC1000EN = HIGH");
   delay(50);
 
+  Serial.println("startMeasurement() 1");
+
   startMeasurement();
   //delay(50);
+
+  //Serial.println("Aquardando INT 1");
 
   while (digitalRead(TDC7200INT)) {
     delayMicroseconds(10);
   }
 
   float _tof1BA = readToF(1);
-  /*float _tof2BA = readToF(2);
-  float _tof3BA = readToF(3);*/
+  float _tof2BA = readToF(2);
+  float _tof3BA = readToF(3);
 
   digitalWrite(ledPin, HIGH);
   delay(100);
   digitalWrite(ledPin, LOW);
 
+  Serial.println("startMeasurement() 2");
+
   startMeasurement();
   //delay(50);
+
+  //Serial.println("Aquardando INT 2");
 
   while (digitalRead(TDC7200INT)) {
     delayMicroseconds(10);
   }
 
   float _tof1AB = readToF(1);
-  /*float _tof2AB = readToF(2);
-  float _tof3AB = readToF(3);*/
+  float _tof2AB = readToF(2);
+  float _tof3AB = readToF(3);
 
   /*digitalWrite(TDC1000EN, LOW);
   Serial.println("TDC1000EN = LOW");
@@ -406,32 +417,32 @@ void loop() {
 
   Serial.print("tof1: ");
   Serial.println(_tof1BA);
-  /**Serial.print("tof2: ");
+  Serial.print("tof2: ");
   Serial.println(_tof2BA);
   Serial.print("tof3: ");
-  Serial.println(_tof3BA);*/
+  Serial.println(_tof3BA);
 
   Serial.println("AB: ");
 
   Serial.print("tof1: ");
   Serial.println(_tof1AB);
-  /*Serial.print("tof2: ");
+  Serial.print("tof2: ");
   Serial.println(_tof2AB);
   Serial.print("tof3: ");
-  Serial.println(_tof3AB);*/
+  Serial.println(_tof3AB);
 
   Serial.println("\nDelta ToF: ");
 
   float _deltaTof1 = _tof1BA - _tof1AB;
-  /*float _deltaTof2 = _tof2BA - _tof2AB;
-  float _deltaTof3 = _tof3BA - _tof3AB;**/
+  float _deltaTof2 = _tof2BA - _tof2AB;
+  float _deltaTof3 = _tof3BA - _tof3AB;
 
   Serial.print("1: ");
   Serial.println(_deltaTof1, 6);
-  /*Serial.print("2: ");
+  Serial.print("2: ");
   Serial.println(_deltaTof2, 6);
   Serial.print("3: ");
-  Serial.println(_deltaTof3, 6);*/
+  Serial.println(_deltaTof3, 6);
 
   Serial.println("");
 
@@ -441,7 +452,7 @@ void loop() {
 
   Serial.println("");
 
-  /*float _f2 = fluxoAgua(_tof2BA, _tof2AB);
+  float _f2 = fluxoAgua(_tof2BA, _tof2AB);
   Serial.print("f2: ");
   Serial.println(_f2, 2);
 
@@ -449,7 +460,7 @@ void loop() {
 
   float _f3 = fluxoAgua(_tof3BA, _tof3AB);
   Serial.print("f3: ");
-  Serial.println(_f3, 2);*/
+  Serial.println(_f3, 2);
 
   delay(1000);
 }
