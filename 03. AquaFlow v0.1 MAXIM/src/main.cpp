@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#define SPI_CLOCK 4000000
+
 #define MAX35103_TOF_Up 0x00
 #define MAX35103_TOF_Down 0x01
 #define MAX35103_TOF_Diff 0x02
@@ -9,7 +11,14 @@
 #define MAX35103_Initialize 0x05
 #define MAX35103_ToFlash 0x06
 
-#define MAX35103_TOF1_W 0x38
+#define MAX35103_LDO_ON 0x0C
+#define MAX35103_LDO_OFF 0x0D
+
+#define MAX35103_TOF1_W 0x38 // R: 0xB8
+#define MAX35103_TOF2_W 0x39 // R: 0xB9
+#define MAX35103_TOF3_W 0x3A // R: 0xBA
+#define MAX35103_TOF4_W 0x3B // R: 0xBB
+#define MAX35103_TOF5_W 0x3C // R: 0xBC
 #define MAX35103_CLBT_CTRL_W 0x42
 
 #define MAX35103_INT_STATUS_R 0xFE
@@ -23,10 +32,10 @@
 
 uint16_t readRegister16(uint8_t _address) {
   digitalWrite(MAX35103CE, LOW);
-  delay(100);
+  delay(10);
 
-  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE1));
-  
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
+
   SPI.transfer(_address);
   uint8_t _v1 = SPI.transfer(0x00);
   uint8_t _v2 = SPI.transfer(0x00);
@@ -36,7 +45,7 @@ uint16_t readRegister16(uint8_t _address) {
 
   SPI.endTransaction();
 
-  delay(100);
+  delay(10);
   digitalWrite(MAX35103CE, HIGH);
   return _value;
 }
@@ -45,9 +54,9 @@ void writeRegister16(uint8_t _address, uint16_t _value) {
   uint8_t _v1 = (_value >> 8) & 0xFF;
   uint8_t _v2 = _value & 0xFF;
   digitalWrite(MAX35103CE, LOW);
-  delay(100);
+  delay(10);
 
-  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE1));
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
 
   SPI.transfer(_address);
   SPI.transfer(_v1);
@@ -55,21 +64,21 @@ void writeRegister16(uint8_t _address, uint16_t _value) {
 
   SPI.endTransaction();
 
-  delay(100);
+  delay(10);
   digitalWrite(MAX35103CE, HIGH);
 }
 
 void opcodeCommand(uint8_t _command) {
   digitalWrite(MAX35103CE, LOW);
-  delay(100);
+  delay(10);
 
-  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE1));
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
 
   SPI.transfer(_command);
 
   SPI.endTransaction();
 
-  delay(100);
+  delay(10);
   digitalWrite(MAX35103CE, HIGH);
 }
 
@@ -224,32 +233,128 @@ void setup() {
 
   SPI.begin();
 
-  Serial.println("Iniciando...");
+  Serial.println("\n\nIniciando...");
+  delay(100);
 
-  delay(5000);
+  opcodeCommand(MAX35103_Reset);
+  delay(100);
+
+  while (interruptStatus(2) == 0) {
+    delay(100);
+  }
+  Serial.println("Reset OK!");
   
-  writeRegister16(MAX35103_TOF1_W, 0x510); // configura PLD para 0b0001 = 1MHz
+  writeRegister16(MAX35103_TOF1_W, 0x3210); // configura PLD para 0b0001 = 1MHz
+  delay(100);
+  writeRegister16(MAX35103_TOF2_W, 0xE247); // T2 = 4
+  delay(100);
+  writeRegister16(MAX35103_TOF3_W, 0x607); // HIT1 = 6 HIT2 = 7
+  delay(100);
+  writeRegister16(MAX35103_TOF4_W, 0x809); // HIT3 = 8 HIT4 = 9
+  delay(100);
+  writeRegister16(MAX35103_TOF5_W, 0xA0B); // HIT5 = 10 HIT6 = 11
   delay(100);
   writeRegister16(MAX35103_CLBT_CTRL_W, 0x200); // configura INT_EN
   delay(100);
-  opcodeCommand(MAX35103_ToFlash);
-  delay(100);
-  opcodeCommand(MAX35103_Initialize);
-  delay(100);
 
   uint16_t _reg = readRegister16(0xB8);
-
-  Serial.print("_reg 0xB8: ");
+  Serial.print("TOF1 0xB8: ");
   Serial.print(_reg, BIN);
-  Serial.print(" | ");
-  Serial.println(_reg);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xB9);
+  Serial.print("TOF2 0xB9: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBA);
+  Serial.print("TOF3 0xBA: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBB);
+  Serial.print("TOF4 0xBB: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBC);
+  Serial.print("TOF5 0xBC: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
 
   _reg = readRegister16(0xC2);
-
   Serial.print("_reg 0xC2: ");
   Serial.print(_reg, BIN);
-  Serial.print(" | ");
-  Serial.println(_reg);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  opcodeCommand(MAX35103_LDO_ON);
+  delay(100);
+
+  while (interruptStatus(10) == 0) {
+    delay(100);
+  }
+  Serial.println("LDO ON e Estavel!");
+
+  /*opcodeCommand(MAX35103_ToFlash);
+  delay(500);
+
+  while (interruptStatus(7) == 0) {
+    delay(500);
+  }
+  Serial.println("Flash Pronta!");*/
+
+  /*Serial.println("Executando comando de Reset");
+
+  opcodeCommand(MAX35103_Reset);
+  delay(5000);
+
+  _reg = readRegister16(0xB8);
+  Serial.print("TOF1 0xB8: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xB9);
+  Serial.print("TOF2 0xB9: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBA);
+  Serial.print("TOF3 0xBA: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBB);
+  Serial.print("TOF4 0xBB: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBC);
+  Serial.print("TOF5 0xBC: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xC2);
+  Serial.print("_reg 0xC2: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);*/
+
+  /*opcodeCommand(MAX35103_Initialize);
+  delay(5000);
+
+  Serial.print("Init ");
+  interruptStatus(0);*/
 
   digitalWrite(ledPin, HIGH);
   delay(50);
@@ -258,14 +363,14 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("ToF");
-  opcodeCommand(MAX35103_TOF_Diff);
+  /*Serial.println("ToF");
+  opcodeCommand(MAX35103_TOF_Diff);*/
 
   /*while (digitalRead(MAX35103INT)) {
     delayMicroseconds(10);
   }*/
 
-  delay(500);
+  /*delay(500);*/
 
   interruptStatus(0);
 
