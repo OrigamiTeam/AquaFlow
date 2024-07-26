@@ -11,6 +11,11 @@
 #define MAX35103_Initialize 0x05
 #define MAX35103_ToFlash 0x06
 
+#define MAX35103_Flash_Read 0x90
+#define MAX35103_Flash_Write 0x10
+#define MAX35103_Flash_Erase 0x13
+
+#define MAX35103_LDO_Timed 0x0B
 #define MAX35103_LDO_ON 0x0C
 #define MAX35103_LDO_OFF 0x0D
 
@@ -91,6 +96,97 @@ boolean interruptStatus(uint8_t _bit) {
   Serial.println(_status);
 
   return ((_status & (1 << _bit)) != false);
+}
+
+uint16_t readFlash16(uint16_t _address) {
+  opcodeCommand(MAX35103_LDO_Timed);
+  delay(100);
+
+  while (interruptStatus(10) == 0) {
+    delay(100);
+  }
+  Serial.println("LDO ON e Estavel!");
+
+  uint8_t _addr1 = (_address >> 8) & 0xFF;
+  uint8_t _addr2 = _address & 0xFF;
+
+  digitalWrite(MAX35103CE, LOW);
+  delay(10);
+
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
+
+  SPI.transfer(MAX35103_Flash_Read);
+  SPI.transfer(_addr1);
+  SPI.transfer(_addr2);
+  uint8_t _v1 = SPI.transfer(0x00);
+  uint8_t _v2 = SPI.transfer(0x00);
+  uint16_t _value = 0;
+  _value |=  ((uint16_t) _v1) << 8;
+  _value |=  ((uint16_t) _v2);
+
+  SPI.endTransaction();
+
+  delay(10);
+  digitalWrite(MAX35103CE, HIGH);
+  return _value;
+}
+
+void writeFlash16(uint16_t _address, uint16_t _value) {
+  opcodeCommand(MAX35103_LDO_Timed);
+  delay(100);
+
+  while (interruptStatus(10) == 0) {
+    delay(100);
+  }
+  Serial.println("LDO ON e Estavel!");
+
+  uint8_t _addr1 = (_address >> 8) & 0xFF;
+  uint8_t _addr2 = _address & 0xFF;
+  uint8_t _v1 = (_value >> 8) & 0xFF;
+  uint8_t _v2 = _value & 0xFF;
+
+  digitalWrite(MAX35103CE, LOW);
+  delay(10);
+
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
+
+  SPI.transfer(MAX35103_Flash_Write);
+  SPI.transfer(_addr1);
+  SPI.transfer(_addr2);
+  SPI.transfer(_v1);
+  SPI.transfer(_v2);
+
+  SPI.endTransaction();
+
+  delay(10);
+  digitalWrite(MAX35103CE, HIGH);
+}
+
+void eraseFlash(uint16_t _address) {
+  opcodeCommand(MAX35103_LDO_Timed);
+  delay(100);
+
+  while (interruptStatus(10) == 0) {
+    delay(100);
+  }
+  Serial.println("LDO ON e Estavel!");
+
+  uint8_t _addr1 = (_address >> 8) & 0xFF;
+  uint8_t _addr2 = _address & 0xFF;
+
+  digitalWrite(MAX35103CE, LOW);
+  delay(10);
+
+  SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE1));
+
+  SPI.transfer(MAX35103_Flash_Erase);
+  SPI.transfer(_addr1);
+  SPI.transfer(_addr2);
+
+  SPI.endTransaction();
+
+  delay(10);
+  digitalWrite(MAX35103CE, HIGH);
 }
 
 /*float calculaToF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _calibration1, uint32_t _calibration2) {
@@ -243,6 +339,44 @@ void setup() {
     delay(100);
   }
   Serial.println("Reset OK!");
+
+  delay(500);
+
+  uint16_t _dado = readFlash16(0x0000);
+  Serial.print("_dado: ");
+  Serial.println(_dado, HEX);
+  delay(500);
+
+  eraseFlash(0x0000);
+  delay(100);
+
+  while (interruptStatus(7) == 0) {
+    delay(100);
+  }
+  Serial.println("Erase OK!");
+
+  delay(500);
+
+  _dado = readFlash16(0x0000);
+  Serial.print("_dado: ");
+  Serial.println(_dado, HEX);
+  delay(500);
+
+  writeFlash16(0x0000, 0x1234);
+  delay(100);
+
+  while (interruptStatus(7) == 0) {
+    delay(100);
+  }
+  Serial.println("Write OK!");
+
+  delay(500);
+
+  _dado = readFlash16(0x0000);
+  Serial.print("_dado: ");
+  Serial.println(_dado, HEX);
+
+  delay(500);
   
   writeRegister16(MAX35103_TOF1_W, 0x3210); // configura PLD para 0b0001 = 1MHz
   delay(100);
@@ -293,73 +427,25 @@ void setup() {
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
 
-  opcodeCommand(MAX35103_LDO_ON);
+  Serial.println("MAX35103_ToFlash");
+
+  opcodeCommand(MAX35103_ToFlash);
   delay(100);
-
-  while (interruptStatus(10) == 0) {
-    delay(100);
-  }
-  Serial.println("LDO ON e Estavel!");
-
-  /*opcodeCommand(MAX35103_ToFlash);
-  delay(500);
 
   while (interruptStatus(7) == 0) {
     delay(500);
   }
-  Serial.println("Flash Pronta!");*/
+  Serial.println("Flash Pronta!");
 
-  /*Serial.println("Executando comando de Reset");
+  /*Serial.println("Iniciando...");
 
-  opcodeCommand(MAX35103_Reset);
-  delay(5000);
+  opcodeCommand(MAX35103_Initialize);
+  delay(100);
 
-  _reg = readRegister16(0xB8);
-  Serial.print("TOF1 0xB8: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xB9);
-  Serial.print("TOF2 0xB9: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xBA);
-  Serial.print("TOF3 0xBA: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xBB);
-  Serial.print("TOF4 0xBB: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xBC);
-  Serial.print("TOF5 0xBC: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xC2);
-  Serial.print("_reg 0xC2: ");
-  Serial.print(_reg, BIN);
-  Serial.print(" | 0x");
-  Serial.println(_reg, HEX);*/
-
-  /*opcodeCommand(MAX35103_Initialize);
-  delay(5000);
-
-  Serial.print("Init ");
-  interruptStatus(0);*/
-
-  digitalWrite(ledPin, HIGH);
-  delay(50);
-  digitalWrite(ledPin, LOW);
-  Serial.println("Loop!");
+  while (interruptStatus(3) == 0) {
+    delay(100);
+  }
+  Serial.println("Initialize OK!");*/
 }
 
 void loop() {
