@@ -3,8 +3,8 @@
 
 #define CALIBRATION2_PERIODS 10
 #define TDC7200_AVG_CYCLES 4.0 // media de 4 medidas
-//#define TDC7200_AVG_CYCLES 1.0
 
+#define TDC1000_CONFIG_0 0x00
 #define TDC1000_CONFIG_1 0x01
 #define TDC1000_CONFIG_2 0x02
 #define TDC1000_CONFIG_3 0x03
@@ -38,6 +38,7 @@
 #define TDC1000CSB 8
 #define TDC7200CSB 9
 #define TDC1000EN 14
+#define TDC1000CHSEL 15
 #define TDC7200EN 18
 
 uint32_t readRegister24(uint8_t _csb, uint8_t _registerAddress) {
@@ -308,6 +309,9 @@ void setup() {
   pinMode(TDC1000EN, OUTPUT);
   digitalWrite(TDC1000EN, LOW);
 
+  pinMode(TDC1000CHSEL, OUTPUT);
+  digitalWrite(TDC1000CHSEL, LOW);
+
   pinMode(TDC7200EN, OUTPUT);
   digitalWrite(TDC7200EN, LOW);
 
@@ -321,16 +325,22 @@ void setup() {
   Serial.println("TDC1000EN = HIGH");
   delay(500);
 
-  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x50); // media de 4 medidas
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_0, 0x45);
+  delay(100);
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x48); // media de 2 medidas com pulsos de stop ilimitados
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x50); // media de 4 medidas com pulsos de stop ilimitados
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x54); // media de 4 medidas com 4 pulsos de stop
   //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x40); // medida unica
   delay(100);
-  writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x12);
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x12); // TOF mode 2 sem Damping
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x32); // TOF mode 2 com Damping
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_2, 0x2A); // TOF mode 2 com Damping e CHSEL externo
   delay(100);
-  //writeRegister(TDC1000CSB, TDC1000_CONFIG_3, 0x03);
-  //delay(100);
-  writeRegister(TDC1000CSB, TDC1000_TOF_1, 0x03);
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_3, 0x05);
   delay(100);
-  writeRegister(TDC1000CSB, TDC1000_TOF_0, 0xFF);
+  writeRegister(TDC1000CSB, TDC1000_TOF_1, 0x00);
+  delay(100);
+  writeRegister(TDC1000CSB, TDC1000_TOF_0, 0x3F);
   delay(100);
 
   digitalWrite(TDC1000EN, LOW);
@@ -343,6 +353,7 @@ void setup() {
   //writeRegister(TDC7200CSB, TDC7200_CONFIG1, 0x02);
   //delay(100);
   
+  //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x48); // media de 2 medidas
   writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50); // media de 4 medidas
   //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x40); // medida unica
   delay(100);
@@ -354,24 +365,12 @@ void setup() {
 }
 
 void loop() {
-  /*if (!digitalRead(btnPin)) {
-    delay(20);
-    if (!digitalRead(btnPin)) {
-      Serial.println("startMeasurement()");
-      digitalWrite(ledPin, HIGH);
-      delay(50);
-      digitalWrite(ledPin, LOW);
-      startMeasurement();
-      while (!digitalRead(btnPin)) {
-        delay(10);
-      }
-    }
-  }
-
-  delay(10);*/
-
   digitalWrite(TDC1000EN, HIGH);
   Serial.println("TDC1000EN = HIGH");
+  delay(50);
+
+  digitalWrite(TDC1000CHSEL, LOW);
+  Serial.println("TDC1000CHSEL = LOW");
   delay(50);
 
   Serial.println("startMeasurement() 1");
@@ -393,6 +392,10 @@ void loop() {
   delay(100);
   digitalWrite(ledPin, LOW);
 
+  digitalWrite(TDC1000CHSEL, HIGH);
+  Serial.println("TDC1000CHSEL = HIGH");
+  delay(100);
+
   Serial.println("startMeasurement() 2");
 
   startMeasurement();
@@ -411,6 +414,10 @@ void loop() {
   /*digitalWrite(TDC1000EN, LOW);
   Serial.println("TDC1000EN = LOW");
   delay(50);*/
+
+  digitalWrite(TDC1000CHSEL, LOW);
+  Serial.println("TDC1000CHSEL = LOW");
+  delay(50);
 
   Serial.println("\n--------------------\n");
   Serial.println("BA: ");
