@@ -276,24 +276,14 @@ float readToF(uint8_t _tofNumber) {
 float fluxoAgua(float _tUp, float _tDown) {
 
   float _deltaToF = _tUp - _tDown; // _deltaToF em ns
-  float _velocidadeAuxA = _deltaToF * 2.202256; // 2.202256 em mm²/us²
-  float _velocidadeAuxB = _velocidadeAuxA / 124.0; // em mm/10⁶ns = mm/ms
-  // Ate esta parte foi revisado com Felipe Leal
+  float _velocidadeAux = _deltaToF * 2.202256; // 2.202256 em mm²/us²
+  float _velocidade = _velocidadeAux / 124.0; // em mm/10⁶ns = mm/ms
 
-  float _velocidadeAuxC = _velocidadeAuxB / 124.0;  // em mm/us
-  float _velocidade = _velocidadeAuxC * 1000.0;  // em m/s
-
-  Serial.print("_deltaToF: ");
+  /*Serial.print("_deltaToF: ");
   Serial.println(_deltaToF, 6);
 
-  Serial.print("_velocidadeAuxA: ");
-  Serial.println(_velocidadeAuxA, 6);
-
-  Serial.print("_velocidadeAuxB: ");
-  Serial.println(_velocidadeAuxB, 6);
-
-  Serial.print("_velocidadeAuxC: ");
-  Serial.println(_velocidadeAuxC, 6);
+  Serial.print("_velocidadeAux: ");
+  Serial.println(_velocidadeAux, 6);*/
 
   Serial.print("_velocidade: ");
   Serial.println(_velocidade, 6);
@@ -357,8 +347,8 @@ void setup() {
 
   writeRegister(TDC1000CSB, TDC1000_CONFIG_0, 0x45);
   delay(100);
-  //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x48); // media de 2 medidas com pulsos de stop ilimitados
-  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x50); // media de 4 medidas com pulsos de stop ilimitados
+  writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x48); // media de 2 medidas com pulsos de stop ilimitados
+  //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x50); // media de 4 medidas com pulsos de stop ilimitados
   //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x54); // media de 4 medidas com 4 pulsos de stop
   //writeRegister(TDC1000CSB, TDC1000_CONFIG_1, 0x40); // medida unica
   delay(100);
@@ -383,8 +373,8 @@ void setup() {
   //writeRegister(TDC7200CSB, TDC7200_CONFIG1, 0x02);
   //delay(100);
   
-  //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x48); // media de 2 medidas
-  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50); // media de 4 medidas
+  writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x48); // media de 2 medidas
+  //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x50); // media de 4 medidas
   //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x40); // medida unica
   delay(100);
 
