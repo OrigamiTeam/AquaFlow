@@ -2,7 +2,7 @@
 #include <SPI.h>
 
 #define CALIBRATION2_PERIODS 10
-#define TDC7200_AVG_CYCLES 4.0 // media de 4 medidas
+#define TDC7200_AVG_CYCLES 2.0 // media de 4 medidas
 
 #define TDC1000_CONFIG_0 0x00
 #define TDC1000_CONFIG_1 0x01
