@@ -1,13 +1,13 @@
 O primeiro passo foi a realização da configuração dos registradores abaixo. Estes valores foram determinados através de testes e medições realizadas com o auxílio do osciloscópio.
 No TDC1000 foram configurados os seguintes registradores:
-CONFIG_0 = 0x45
-CONFIG_1 = 0x48
-CONFIG_2 = 0x2A
-CONFIG_3 = 0x05
-TOF_1 = 0x00
-TOF_2 = 0x3F
+- CONFIG_0 = 0x45
+- CONFIG_1 = 0x48
+- CONFIG_2 = 0x2A
+- CONFIG_3 = 0x05
+- TOF_1 = 0x00
+- TOF_2 = 0x3F
 No TDC7200 foram configurados os seguintes registradores:
-CONFIG2 = 0x48
+- CONFIG2 = 0x48
 
 Em seguida foram realizadas as medições seguindo a sequencia de acionamento abaixo, com atraso de 50ms entre cada operação:
 1. Pino EN do TDC1000 para nível HIGH.
