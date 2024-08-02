@@ -1,4 +1,5 @@
 O primeiro passo foi a realização da configuração dos registradores abaixo. Estes valores foram determinados através de testes e medições realizadas com o auxílio do osciloscópio.
+
 No TDC1000 foram configurados os seguintes registradores:
 - CONFIG_0 = 0x45
 - CONFIG_1 = 0x48
@@ -27,11 +28,16 @@ Em seguida foram realizadas as medições seguindo a sequencia de acionamento ab
     "v" é a velocidade do fluxo [mm/ms]
 11. Converter o fluxo calculado em vazão, considerando a secção transversal do tubo.
 12. Ajustar o fluxo de acordo com o fator de correção "k".
+
 O firmware que realiza estas medições pode ver verificado na pasta atual.
 
 O fator de correção "k" foi determinado através da realização de medições utilizando um sensor de fluxo de efeito hall com aproximadamente 27 pulsos por litro. Foram realizadas medições em 5 fluxos diferentes, fazendo a média das leituras realizadas com o sensor de referência e através das medições do TDC1000 + TDC7200.
+
 Em seguida, foi construído um gráfico de dispersão tendo como eixo X os valores de fluxo medido e como eixo Y os valores de "k" calculados para cada um dos 5 ensaios realizados.
+
 Por meio do gráfico de dispersão foi possível gerar uma linha de tendência que indica o valor do "k" que deve ser utilizado de acordo com o fluxo medido e, com isso, foi possível realizar a aproximação do fluxo medido ao fluxo de referência do sensor de fluxo de efeito hall.
+
 Planilha com os cálculos citados anteriormente: https://docs.google.com/spreadsheets/d/1ap94_Y3gvMaDul2QDZ6mnZ87WAkQDQjPwV1WzfmNDjM
+
 
 A diferença máxima entre as medições de fluxo foi por volta de 1 L/min para o fluxo de 25 L/min, ou seja, estamos trabalhando com uma diferença máxima de 4% quando comparados os medidores.
