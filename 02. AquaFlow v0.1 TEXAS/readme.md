@@ -6,6 +6,7 @@ No TDC1000 foram configurados os seguintes registradores:
 - CONFIG_3 = 0x05
 - TOF_1 = 0x00
 - TOF_2 = 0x3F
+
 No TDC7200 foram configurados os seguintes registradores:
 - CONFIG2 = 0x48
 
