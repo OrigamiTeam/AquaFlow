@@ -32,8 +32,11 @@
 
 #define TDC7200INT 2
 
-#define ledPin 6
-#define btnPin 7
+#define swAbertoPin 6
+#define swFechadoPin 7
+
+#define AIN1 23
+#define AIN2 24
 
 #define TDC1000CSB 8
 #define TDC7200CSB 9
@@ -334,17 +337,117 @@ float mediano3(float _vetor[]) {
   return _vetor[1];
 }
 
+boolean abreValvula() {
+  if(!digitalRead(swAbertoPin)) {
+    delay(20);
+    if (!digitalRead(swAbertoPin)) {
+      digitalWrite(AIN1, LOW);
+      return true;
+    }
+  }
+
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+
+  uint32_t _cont = 0;
+  boolean _aguardar = true;
+  while(_aguardar) {
+    if(_cont > 1500) {
+      digitalWrite(AIN1, LOW);
+      return false;
+    }
+
+    if(!digitalRead(swAbertoPin)) {
+      delay(20);
+      if (!digitalRead(swAbertoPin)) {
+        digitalWrite(AIN1, LOW);
+        _aguardar = false;
+      }
+    }
+
+    delay(10);
+    _cont++;
+  }
+  return true;
+}
+
+boolean fechaValvula() {
+  if(!digitalRead(swFechadoPin)) {
+    delay(20);
+    if (!digitalRead(swFechadoPin)) {
+      return true;
+    }
+  }
+
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+
+  uint32_t _cont = 0;
+  boolean _aguardar = true;
+  while(_aguardar) {
+    if(_cont > 1500) {
+      digitalWrite(AIN2, LOW);
+      return false;
+    }
+
+    if(!digitalRead(swFechadoPin)) {
+      delay(20);
+      if (!digitalRead(swFechadoPin)) {
+        digitalWrite(AIN2, LOW);
+        _aguardar = false;
+      }
+    }
+
+    delay(10);
+    _cont++;
+  }
+  return true;
+}
+
+boolean abreValvulaParcial(uint32_t _tempoMilis) {
+  if (!fechaValvula()) {
+    return false;
+  }
+  delay(250);
+
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+
+  unsigned long _tempoInicial = millis();
+  while (millis() < _tempoInicial + _tempoMilis) {
+
+    if(!digitalRead(swAbertoPin)) {
+      delay(20);
+      if (!digitalRead(swAbertoPin)) {
+        digitalWrite(AIN1, LOW);
+        return false;
+      }
+    }
+
+    delay(10);
+  }
+  
+  digitalWrite(AIN1, LOW);
+  return true;
+}
+
 void setup() {
   Serial.begin(115200);
 
   pinMode(TDC7200INT, INPUT);
   digitalWrite(TDC7200INT, HIGH);
 
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
+  pinMode(swAbertoPin, INPUT);
+  digitalWrite(swAbertoPin, HIGH);
 
-  pinMode(btnPin, INPUT);
-  digitalWrite(btnPin, HIGH);
+  pinMode(swFechadoPin, INPUT);
+  digitalWrite(swFechadoPin, HIGH);
+
+  pinMode(AIN1, OUTPUT);
+  digitalWrite(AIN1, LOW);
+
+  pinMode(AIN2, OUTPUT);
+  digitalWrite(AIN2, LOW);
 
   pinMode(TDC1000CSB, OUTPUT);
   digitalWrite(TDC1000CSB, HIGH);
@@ -360,6 +463,8 @@ void setup() {
 
   pinMode(TDC7200EN, OUTPUT);
   digitalWrite(TDC7200EN, LOW);
+
+  Serial.println("Start...");
 
   SPI.begin();
 
@@ -404,9 +509,6 @@ void setup() {
   //writeRegister(TDC7200CSB, TDC7200_CONFIG2, 0x40); // medida unica
   delay(100);
 
-  digitalWrite(ledPin, HIGH);
-  delay(50);
-  digitalWrite(ledPin, LOW);
   Serial.println("Loop!");
 }
 
@@ -436,9 +538,7 @@ void loop() {
 
       _tofBA[_i] = readToF(1);
 
-      digitalWrite(ledPin, HIGH);
       delay(10);
-      digitalWrite(ledPin, LOW);
 
       digitalWrite(TDC1000CHSEL, HIGH);
       delay(10);
@@ -522,6 +622,42 @@ void loop() {
     
     Serial.print("f: ");
     Serial.println(_fluxoAjustado, 2);
+  }
+
+  if (Serial.available()) {
+    char _char = Serial.read();
+
+    if (_char == 'a') {
+      Serial.print("Abrindo Valvula: ");
+      if (abreValvula()) {
+        Serial.println("OK");
+      }
+      else {
+        Serial.println("Erro!");
+      }
+    }
+    else if (_char == 'f') {
+      Serial.print("Fechando Valvula: ");
+      if (fechaValvula()) {
+        Serial.println("OK");
+      }
+      else {
+        Serial.println("Erro!");
+      }
+    }
+    else if (_char == 'p') {
+      Serial.print("Abrindo Valvula Parcial: ");
+      if (abreValvulaParcial(4500)) {
+        Serial.println("OK");
+      }
+      else {
+        Serial.println("Erro!");
+      }
+    }
+
+    while (Serial.available()) {
+      _char = Serial.read();
+    }
   }
 
   delay(10);
