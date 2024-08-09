@@ -46,9 +46,6 @@
 
 unsigned long ultimaMedida = 0;
 
-float _tofBA[3] = {0.0, 0.0, 0.0};
-float _tofAB[3] = {0.0, 0.0, 0.0};
-
 uint32_t readRegister24(uint8_t _csb, uint8_t _registerAddress) {
   digitalWrite(_csb, LOW);
   delay(10);
@@ -93,90 +90,6 @@ float calculaToF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _ca
   
   return _tof;
 }
-
-/*void readToF() {
-  uint32_t _time1 = readRegister24(TDC7200CSB, TDC7200_TIME1);
-  uint32_t _time2 = readRegister24(TDC7200CSB, TDC7200_TIME2);
-  uint32_t _time3 = readRegister24(TDC7200CSB, TDC7200_TIME3);
-  uint32_t _time4 = readRegister24(TDC7200CSB, TDC7200_TIME4);
-  uint32_t _time5 = readRegister24(TDC7200CSB, TDC7200_TIME5);
-  uint32_t _time6 = readRegister24(TDC7200CSB, TDC7200_TIME6);
-
-  uint32_t _clock1 = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT1);
-  uint32_t _clock2 = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT2);
-  uint32_t _clock3 = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT3);
-  uint32_t _clock4 = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT4);
-  uint32_t _clock5 = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT5);
-
-  uint32_t _calibration1 = readRegister24(TDC7200CSB, TDC7200_CALIBRATION1);
-  uint32_t _calibration2 = readRegister24(TDC7200CSB, TDC7200_CALIBRATION2);
-
-  Serial.print("_time1: ");
-  Serial.println(_time1);
-  Serial.print("_time2: ");
-  Serial.println(_time2);
-  Serial.print("_time3: ");
-  Serial.println(_time3);
-  Serial.print("_time4: ");
-  Serial.println(_time4);
-  Serial.print("_time5: ");
-  Serial.println(_time5);
-  Serial.print("_time6: ");
-  Serial.println(_time6);
-
-  Serial.print("_clock1: ");
-  Serial.println(_clock1);
-  Serial.print("_clock2: ");
-  Serial.println(_clock2);
-  Serial.print("_clock3: ");
-  Serial.println(_clock3);
-  Serial.print("_clock4: ");
-  Serial.println(_clock4);
-  Serial.print("_clock5: ");
-  Serial.println(_clock5);
-
-  Serial.print("_calibration1: ");
-  Serial.println(_calibration1);
-  Serial.print("_calibration2: ");
-  Serial.println(_calibration2);
-
-  Serial.println("");
-
-  if (_clock1) {
-    float _tof1 = calculaToF(_time1, _time2, _clock1, _calibration1, _calibration2);
-    _tof1 = _tof1 / TDC7200_AVG_CYCLES;
-    Serial.print("_tof1: ");
-    Serial.println(_tof1, 6);
-  }
-
-  if (_clock2) {
-    float _tof2 = calculaToF(_time2, _time3, _clock2, _calibration1, _calibration2);
-    _tof2 = _tof2 / TDC7200_AVG_CYCLES;
-    Serial.print("_tof2: ");
-    Serial.println(_tof2, 6);
-  }
-
-  if (_clock3) {
-    float _tof3 = calculaToF(_time3, _time4, _clock3, _calibration1, _calibration2);
-    _tof3 = _tof3 / TDC7200_AVG_CYCLES;
-    Serial.print("_tof3: ");
-    Serial.println(_tof3, 6);
-  }
-
-  if (_clock4) {
-    float _tof4 = calculaToF(_time4, _time5, _clock4, _calibration1, _calibration2);
-    _tof4 = _tof4 / TDC7200_AVG_CYCLES;
-    Serial.print("_tof4: ");
-    Serial.println(_tof4, 6);
-  }
-
-  if (_clock5) {
-    float _tof5 = calculaToF(_time5, _time6, _clock5, _calibration1, _calibration2);
-    _tof5 = _tof5 / TDC7200_AVG_CYCLES;
-    Serial.print("_tof5: ");
-    Serial.println(_tof5, 6);
-  }
-}*/
 
 float readToF(uint8_t _tofNumber) {
   if (_tofNumber >= 1 && _tofNumber <= 5) {
@@ -252,35 +165,6 @@ float readToF(uint8_t _tofNumber) {
   return 0.0;
 }
 
-/*float fluxoAgua(float _tUp, float _tDown) {
-
-  float _deltaToF = _tUp - _tDown;
-  float _velocidadeAuxA = _deltaToF / 1000.0;  // _deltaToF em us
-  float _velocidadeAuxB = _velocidadeAuxA * 2.196324; // em mm^2/us
-
-  float _velocidadeAuxC = _velocidadeAuxB / 124.0;  // em mm/us
-  float _velocidade = _velocidadeAuxC * 1000.0;  // em m/s
-
-  Serial.print("_deltaToF: ");
-  Serial.println(_deltaToF, 6);
-
-  Serial.print("_velocidadeAuxA: ");
-  Serial.println(_velocidadeAuxA, 6);
-
-  Serial.print("_velocidadeAuxB: ");
-  Serial.println(_velocidadeAuxB, 6);
-
-  Serial.print("_velocidadeAuxC: ");
-  Serial.println(_velocidadeAuxC, 6);
-
-  Serial.print("_velocidade: ");
-  Serial.println(_velocidade, 6);
-
-  float _fluxo = _velocidade * 6.785840; // em l/m
-
-  return _fluxo;
-}*/
-
 float fluxoAgua(float _deltaToF) {
   float _velocidadeAux = _deltaToF * 2.202256; // 2.202256 em mm²/us²
   float _velocidade = _velocidadeAux / 124.0; // em mm/10⁶ns = mm/ms
@@ -335,6 +219,88 @@ float mediano3(float _vetor[]) {
   }
 
   return _vetor[1];
+}
+
+boolean medeFluxo(float* fluxoMedido) {
+  *fluxoMedido = 0.0;
+  float _tofBA[3] = {0.0, 0.0, 0.0};
+  float _tofAB[3] = {0.0, 0.0, 0.0};
+
+  digitalWrite(TDC1000EN, HIGH);
+  delay(10);
+  
+  for (uint8_t _i = 0; _i < 3; _i++) {
+    digitalWrite(TDC1000CHSEL, LOW);
+    delay(10);
+
+    startMeasurement();
+
+    uint32_t _cont = 0;
+    while (digitalRead(TDC7200INT)) {
+      if (_cont >= 500) {
+        Serial.println("ToF BA Timeout!");
+        return false;
+      }
+      delay(1);
+      _cont++;
+    }
+
+    _tofBA[_i] = readToF(1);
+
+    delay(10);
+
+    digitalWrite(TDC1000CHSEL, HIGH);
+    delay(10);
+
+    startMeasurement();
+
+    _cont = 0;
+    while (digitalRead(TDC7200INT)) {
+      if (_cont >= 500) {
+        Serial.println("ToF AB Timeout!");
+        return false;
+      }
+      delay(1);
+      _cont++;
+    }
+
+    _tofAB[_i] = readToF(1);
+  }
+
+  /*digitalWrite(TDC1000EN, LOW);
+  Serial.println("TDC1000EN = LOW");
+  delay(50);*/
+
+  digitalWrite(TDC1000CHSEL, LOW);
+  delay(10);
+
+  float _deltaTof[3] = {0.0, 0.0, 0.0};
+
+  for (uint8_t _i = 0; _i < 3; _i++) {
+    if (_tofBA[_i] != 0.0 && _tofAB[_i] != 0.0) {
+      _deltaTof[_i] = _tofBA[_i] - _tofAB[_i];
+    }
+    else {
+      return false;
+    }
+  }
+
+  /*for (uint8_t _i = 0; _i < 3; _i++) {
+    Serial.print("_tofBA: ");
+    Serial.println(_tofBA[_i], 2);
+
+    Serial.print("_tofAB: ");
+    Serial.println(_tofAB[_i], 2);
+  }*/
+
+  float _deltTofMed3 = mediano3(_deltaTof);
+  /*Serial.print("_deltTofMed3: ");
+  Serial.println(_deltTofMed3, 2);*/
+
+  float _fluxo1 = fluxoAgua(_deltTofMed3);
+  *fluxoMedido = ajustaFluxo(_fluxo1);
+  
+  return true;
 }
 
 boolean abreValvula() {
@@ -515,112 +481,14 @@ void loop() {
   if (millis() >= ultimaMedida + 1000) {
     ultimaMedida = millis();
 
-    _tofBA[0] = 0.0;
-    _tofBA[1] = 0.0;
-    _tofBA[2] = 0.0;
-    _tofAB[0] = 0.0;
-    _tofAB[1] = 0.0;
-    _tofAB[2] = 0.0;
-
-    digitalWrite(TDC1000EN, HIGH);
-    delay(10);
-    
-    for (uint8_t _i = 0; _i < 3; _i++) {
-      digitalWrite(TDC1000CHSEL, LOW);
-      delay(10);
-
-      startMeasurement();
-
-      while (digitalRead(TDC7200INT)) {
-        delayMicroseconds(10);
-      }
-
-      _tofBA[_i] = readToF(1);
-
-      delay(10);
-
-      digitalWrite(TDC1000CHSEL, HIGH);
-      delay(10);
-
-      startMeasurement();
-
-      while (digitalRead(TDC7200INT)) {
-        delayMicroseconds(10);
-      }
-
-      _tofAB[_i] = readToF(1);
+    float _fluxoMedido = 0.0;
+    if (medeFluxo(&_fluxoMedido)) {
+      Serial.print("f: ");
+      Serial.println(_fluxoMedido, 2);
     }
-
-    /*digitalWrite(TDC1000EN, LOW);
-    Serial.println("TDC1000EN = LOW");
-    delay(50);*/
-
-    digitalWrite(TDC1000CHSEL, LOW);
-    delay(10);
-
-    /*Serial.print("tofBA: ");
-    Serial.print(_tofBA[0], 2);
-    Serial.print(" , ");
-    Serial.print(_tofBA[1], 2);
-    Serial.print(" , ");
-    Serial.println(_tofBA[2], 2);*/
-
-    /*Serial.print("tofAB: ");
-    Serial.print(_tofAB[0], 2);
-    Serial.print(" , ");
-    Serial.print(_tofAB[1], 2);
-    Serial.print(" , ");
-    Serial.println(_tofAB[2], 2);*/
-
-    /*Serial.println("\n--------------------\n");
-    Serial.println("BA: ");
-
-    Serial.print("tof1: ");
-    Serial.println(_tof1BA);*/
-    /*Serial.print("tof2: ");
-    Serial.println(_tof2BA);
-    Serial.print("tof3: ");
-    Serial.println(_tof3BA);*/
-
-    /*Serial.println("AB: ");
-
-    Serial.print("tof1: ");
-    Serial.println(_tof1AB);*/
-    /*Serial.print("tof2: ");
-    Serial.println(_tof2AB);
-    Serial.print("tof3: ");
-    Serial.println(_tof3AB);*/
-
-    //Serial.println("\nDelta ToF: ");
-
-    /*float _deltaTof1 = _tof1BA - _tof1AB;
-    float _deltaTof2 = _tof2BA - _tof2AB;
-    float _deltaTof3 = _tof3BA - _tof3AB;*/
-
-    /*Serial.print("1: ");
-    Serial.println(_deltaTof1, 6);*/
-    /*Serial.print("2: ");
-    Serial.println(_deltaTof2, 6);
-    Serial.print("3: ");
-    Serial.println(_deltaTof3, 6);*/
-
-    //Serial.println("");
-
-    float _deltaTof[3] = {0.0, 0.0, 0.0};
-
-    for (uint8_t _i = 0; _i < 3; _i++) {
-      _deltaTof[_i] = _tofBA[_i] - _tofAB[_i];
+    else {
+      Serial.println("ERRO ao medir fluxo!");
     }
-
-    float _deltTofMed3 = mediano3(_deltaTof);
-    /*Serial.print("_deltTofMed3: ");
-    Serial.println(_deltTofMed3, 2);*/
-
-    float _fluxo1 = fluxoAgua(_deltTofMed3);
-    float _fluxoAjustado = ajustaFluxo(_fluxo1);
-    
-    Serial.print("f: ");
-    Serial.println(_fluxoAjustado, 2);
   }
 
   if (Serial.available()) {
