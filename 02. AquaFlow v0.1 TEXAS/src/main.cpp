@@ -341,7 +341,6 @@ boolean abreValvula() {
   if(!digitalRead(swAbertoPin)) {
     delay(20);
     if (!digitalRead(swAbertoPin)) {
-      digitalWrite(AIN1, LOW);
       return true;
     }
   }
