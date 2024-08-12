@@ -3,6 +3,7 @@
 
 #define SPI_CLOCK 4000000
 
+// adicionar demais registradores
 #define MAX35103_TOF_Up 0x00
 #define MAX35103_TOF_Down 0x01
 #define MAX35103_TOF_Diff 0x02
