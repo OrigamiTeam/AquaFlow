@@ -3,7 +3,6 @@
 
 #define SPI_CLOCK 4000000
 
-// adicionar demais registradores
 #define MAX35103_TOF_Up 0x00
 #define MAX35103_TOF_Down 0x01
 #define MAX35103_TOF_Diff 0x02
@@ -25,7 +24,10 @@
 #define MAX35103_TOF3_W 0x3A // R: 0xBA
 #define MAX35103_TOF4_W 0x3B // R: 0xBB
 #define MAX35103_TOF5_W 0x3C // R: 0xBC
-#define MAX35103_CLBT_CTRL_W 0x42
+#define MAX35103_TOF6_W 0x3D // R: 0xBD
+#define MAX35103_TOF7_W 0x3E // R: 0xBE
+#define MAX35103_TOF_MES_W 0x41 // R: 0xC1
+#define MAX35103_CLB_CTR_W 0x42 // R: 0xC2
 
 #define MAX35103_INT_STATUS_R 0xFE
 
@@ -91,12 +93,12 @@ void opcodeCommand(uint8_t _command) {
 boolean interruptStatus(uint8_t _bit) {
   uint16_t _status = readRegister16(MAX35103_INT_STATUS_R);
 
-  Serial.print("_status: ");
+  /*Serial.print("_status: ");
   Serial.print(_status, BIN);
   Serial.print(" | ");
-  Serial.println(_status);
+  Serial.println(_status);*/
 
-  return ((_status & (1 << _bit)) != false);
+  return (_status & (1 << _bit));
 }
 
 uint16_t readFlash16(uint16_t _address) {
@@ -343,7 +345,7 @@ void setup() {
 
   delay(500);
 
-  uint16_t _dado = readFlash16(0x0000);
+  /*uint16_t _dado = readFlash16(0x0000);
   Serial.print("_dado: ");
   Serial.println(_dado, HEX);
   delay(500);
@@ -377,19 +379,25 @@ void setup() {
   Serial.print("_dado: ");
   Serial.println(_dado, HEX);
 
-  delay(500);
+  delay(500);*/
   
-  writeRegister16(MAX35103_TOF1_W, 0x3210); // configura PLD para 0b0001 = 1MHz
+  writeRegister16(MAX35103_TOF1_W, 0x1311);
   delay(100);
-  writeRegister16(MAX35103_TOF2_W, 0xE247); // T2 = 4
+  writeRegister16(MAX35103_TOF2_W, 0xA4F2);
   delay(100);
-  writeRegister16(MAX35103_TOF3_W, 0x607); // HIT1 = 6 HIT2 = 7
+  writeRegister16(MAX35103_TOF3_W, 0x0A0B);
   delay(100);
-  writeRegister16(MAX35103_TOF4_W, 0x809); // HIT3 = 8 HIT4 = 9
+  writeRegister16(MAX35103_TOF4_W, 0x0C0D);
   delay(100);
-  writeRegister16(MAX35103_TOF5_W, 0xA0B); // HIT5 = 10 HIT6 = 11
+  writeRegister16(MAX35103_TOF5_W, 0x0E0F);
   delay(100);
-  writeRegister16(MAX35103_CLBT_CTRL_W, 0x200); // configura INT_EN
+  writeRegister16(MAX35103_TOF6_W, 0x0048);
+  delay(100);
+  writeRegister16(MAX35103_TOF7_W, 0x0048);
+  delay(100);
+  writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
+  delay(100);
+  writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
   delay(100);
 
   uint16_t _reg = readRegister16(0xB8);
@@ -422,11 +430,31 @@ void setup() {
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
 
+  _reg = readRegister16(0xBD);
+  Serial.print("TOF5 0xBD: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xBE);
+  Serial.print("TOF5 0xBE: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
+  _reg = readRegister16(0xC1);
+  Serial.print("_reg 0xC1: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
   _reg = readRegister16(0xC2);
   Serial.print("_reg 0xC2: ");
   Serial.print(_reg, BIN);
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
+
+  delay(500);
 
   Serial.println("MAX35103_ToFlash");
 
@@ -434,11 +462,13 @@ void setup() {
   delay(100);
 
   while (interruptStatus(7) == 0) {
-    delay(500);
+    delay(100);
   }
   Serial.println("Flash Pronta!");
+  
+  delay(500);
 
-  /*Serial.println("Iniciando...");
+  Serial.println("Iniciando...");
 
   opcodeCommand(MAX35103_Initialize);
   delay(100);
@@ -446,105 +476,30 @@ void setup() {
   while (interruptStatus(3) == 0) {
     delay(100);
   }
-  Serial.println("Initialize OK!");*/
+  Serial.println("Initialize OK!");
 }
 
 void loop() {
-  /*Serial.println("ToF");
-  opcodeCommand(MAX35103_TOF_Diff);*/
-
-  /*while (digitalRead(MAX35103INT)) {
-    delayMicroseconds(10);
-  }*/
-
-  /*delay(500);*/
-
-  interruptStatus(0);
-
-  /*Serial.println("startMeasurement()");
-
-  startMeasurement();
+  Serial.print("ToF Diff: ");
+  opcodeCommand(MAX35103_TOF_Diff);
 
   while (digitalRead(MAX35103INT)) {
-    delayMicroseconds(10);
+    delay(50);
   }
 
-  float _tof1BA = readToF(1);
-  float _tof2BA = readToF(2);
-  float _tof3BA = readToF(3);
-
-  digitalWrite(ledPin, HIGH);
-  delay(100);
-  digitalWrite(ledPin, LOW);
-
-  Serial.println("startMeasurement() 2");
-
-  startMeasurement();
-  //delay(50);
-
-  //Serial.println("Aquardando INT 2");
-
-  while (digitalRead(TDC7200INT)) {
-    delayMicroseconds(10);
+  // interruptStatus(15) indica timeout!!!!!!!!
+  if (interruptStatus(12)) {
+    Serial.println("OK!");
   }
 
-  float _tof1AB = readToF(1);
-  float _tof2AB = readToF(2);
-  float _tof3AB = readToF(3);
+  Serial.println("Diferenca da Media dos ToF UP - DN: ");
+  uint16_t _reg = readRegister16(0xE2);
+  Serial.print("_reg 0xE2: 0x");
+  Serial.println(_reg, HEX);
 
-  digitalWrite(TDC1000EN, LOW);
-  Serial.println("TDC1000EN = LOW");
-  delay(50);
-
-  Serial.println("\n--------------------\n");
-  Serial.println("BA: ");
-
-  Serial.print("tof1: ");
-  Serial.println(_tof1BA);
-  Serial.print("tof2: ");
-  Serial.println(_tof2BA);
-  Serial.print("tof3: ");
-  Serial.println(_tof3BA);
-
-  Serial.println("AB: ");
-
-  Serial.print("tof1: ");
-  Serial.println(_tof1AB);
-  Serial.print("tof2: ");
-  Serial.println(_tof2AB);
-  Serial.print("tof3: ");
-  Serial.println(_tof3AB);
-
-  Serial.println("\nDelta ToF: ");
-
-  float _deltaTof1 = _tof1BA - _tof1AB;
-  float _deltaTof2 = _tof2BA - _tof2AB;
-  float _deltaTof3 = _tof3BA - _tof3AB;
-
-  Serial.print("1: ");
-  Serial.println(_deltaTof1, 6);
-  Serial.print("2: ");
-  Serial.println(_deltaTof2, 6);
-  Serial.print("3: ");
-  Serial.println(_deltaTof3, 6);
-
-  Serial.println("");
-
-  float _f1 = fluxoAgua(_tof1BA, _tof1AB);
-  Serial.print("f1: ");
-  Serial.println(_f1, 2);
-
-  Serial.println("");
-
-  float _f2 = fluxoAgua(_tof2BA, _tof2AB);
-  Serial.print("f2: ");
-  Serial.println(_f2, 2);
-
-  Serial.println("");
-
-  float _f3 = fluxoAgua(_tof3BA, _tof3AB);
-  Serial.print("f3: ");
-  Serial.println(_f3, 2);*/
+  _reg = readRegister16(0xE3);
+  Serial.print("_reg 0xE3: 0x");
+  Serial.println(_reg, HEX);
 
   delay(1000);
 }
