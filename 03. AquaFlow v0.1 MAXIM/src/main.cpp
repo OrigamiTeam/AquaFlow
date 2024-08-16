@@ -14,7 +14,6 @@
 #define MAX35103_Flash_Read 0x90
 #define MAX35103_Flash_Write 0x10
 #define MAX35103_Flash_Erase 0x13
-
 #define MAX35103_LDO_Timed 0x0B
 #define MAX35103_LDO_ON 0x0C
 #define MAX35103_LDO_OFF 0x0D
@@ -26,17 +25,19 @@
 #define MAX35103_TOF5_W 0x3C // R: 0xBC
 #define MAX35103_TOF6_W 0x3D // R: 0xBD
 #define MAX35103_TOF7_W 0x3E // R: 0xBE
+#define MAX35103_EVT_TMN_W 0x40 // R: 0xC0
 #define MAX35103_TOF_MES_W 0x41 // R: 0xC1
 #define MAX35103_CLB_CTR_W 0x42 // R: 0xC2
 
 #define MAX35103_INT_STATUS_R 0xFE
 
 #define MAX35103INT 3
+#define MAX35103CE 10
 
 #define ledPin 6
 #define btnPin 7
 
-#define MAX35103CE 10
+unsigned long leituraAnterior = 0;
 
 uint16_t readRegister16(uint8_t _address) {
   digitalWrite(MAX35103CE, LOW);
@@ -315,6 +316,57 @@ float fluxoAgua(float _tUp, float _tDown) {
   return _fluxo;
 }*/
 
+float TOF_DIF(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
+  // Verificar MSB do _TOF_DIFFInt e sendo 1:
+  // A - Inverter todos os demais bits do _TOF_DIFFInt
+  // B - Inverter todos os bits de _TOF_DIFFFrac
+  // C - Somar 1 ao _TOF_DIFFFrac. Ou seja, quando _TOF_DIFFFrac for 0xFFFF, ele representa -1
+
+  uint16_t _TOF_DIFFIntFinal = _TOF_DIFFInt;
+  uint16_t _TOF_DIFFFracFinal = _TOF_DIFFFrac;
+  boolean _negativo = false;
+
+  if (_TOF_DIFFInt & (1 << 15)) {
+    _TOF_DIFFIntFinal = _TOF_DIFFInt ^ 65535;
+    _TOF_DIFFFracFinal = _TOF_DIFFFrac ^ 65535;
+    
+    if (_TOF_DIFFFracFinal < 65535) {
+      _TOF_DIFFFracFinal++;
+    }
+    
+    _negativo = true;
+  }
+
+  uint32_t _tempoIntNanoSec = (uint32_t)_TOF_DIFFIntFinal * 250;
+  float _tempoFracNanoSec = (float)_TOF_DIFFFracFinal * 3.814755;
+  _tempoFracNanoSec = _tempoFracNanoSec / 1000.0;
+  float _tempoNanoSec = (float)_tempoIntNanoSec + _tempoFracNanoSec;
+
+  if (_negativo) {
+    _tempoNanoSec = _tempoNanoSec * -1.0;
+  }
+
+  return _tempoNanoSec;
+}
+
+float fluxoAgua(float _deltaToF) {
+  float _velocidadeAux = _deltaToF * 2.202256; // 2.202256 em mm²/us²
+  float _velocidade = _velocidadeAux / 124.0; // em mm/10⁶ns = mm/ms
+
+  /*Serial.print("_deltaToF: ");
+  Serial.println(_deltaToF, 6);
+
+  Serial.print("_velocidadeAux: ");
+  Serial.println(_velocidadeAux, 6);
+
+  Serial.print("_velocidade: ");
+  Serial.println(_velocidade, 6);*/
+
+  float _fluxo = _velocidade * 6.785840; // em l/m
+
+  return _fluxo;
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -395,6 +447,10 @@ void setup() {
   delay(100);
   writeRegister16(MAX35103_TOF7_W, 0x0048);
   delay(100);
+
+  writeRegister16(MAX35103_EVT_TMN_W, 0x0008);
+  delay(100);
+  
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
   delay(100);
   writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
@@ -442,6 +498,12 @@ void setup() {
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
 
+  _reg = readRegister16(0xC0);
+  Serial.print("_reg 0xC0: ");
+  Serial.print(_reg, BIN);
+  Serial.print(" | 0x");
+  Serial.println(_reg, HEX);
+
   _reg = readRegister16(0xC1);
   Serial.print("_reg 0xC1: ");
   Serial.print(_reg, BIN);
@@ -480,26 +542,54 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("ToF Diff: ");
-  opcodeCommand(MAX35103_TOF_Diff);
+  if (millis() > leituraAnterior + 1000) {
+    Serial.print("ToF Diff: ");
+    opcodeCommand(MAX35103_TOF_Diff);
 
-  while (digitalRead(MAX35103INT)) {
-    delay(50);
+    while (digitalRead(MAX35103INT)) {
+      delay(50);
+    }
+
+    // interruptStatus(15) indica timeout!!!!!!!!
+    if (interruptStatus(12)) {
+      Serial.println("OK!");
+    }
+
+    uint16_t _TOF_DIFFInt = readRegister16(0xE2);
+    uint16_t _TOF_DIFFFrac = readRegister16(0xE3);
+    float _TOF_DIFF = TOF_DIF(_TOF_DIFFInt, _TOF_DIFFFrac);
+    float _fluxoAgua = fluxoAgua(_TOF_DIFF);
+
+    Serial.print("TOF_DIFF: ");
+    Serial.println(_TOF_DIFF);
+
+    Serial.print("_fluxoAgua: ");
+    Serial.println(_fluxoAgua);
+
+    /*Serial.print("Temp: ");
+    opcodeCommand(MAX35103_Temperature);
+
+    while (digitalRead(MAX35103INT)) {
+      delay(50);
+    }
+
+    // interruptStatus(15) indica timeout!!!!!!!!
+    if (interruptStatus(11)) {
+      Serial.println("OK!");
+    }
+
+    uint16_t _TOF_DIFFInt = readRegister16(0xE2);
+    uint16_t _TOF_DIFFFrac = readRegister16(0xE3);
+    float _TOF_DIFF = TOF_DIF(_TOF_DIFFInt, _TOF_DIFFFrac);
+    float _fluxoAgua = fluxoAgua(_TOF_DIFF);
+
+    Serial.print("TOF_DIFF: ");
+    Serial.println(_TOF_DIFF);
+
+    Serial.print("_fluxoAgua: ");
+    Serial.println(_fluxoAgua);*/
   }
+  
 
-  // interruptStatus(15) indica timeout!!!!!!!!
-  if (interruptStatus(12)) {
-    Serial.println("OK!");
-  }
-
-  Serial.println("Diferenca da Media dos ToF UP - DN: ");
-  uint16_t _reg = readRegister16(0xE2);
-  Serial.print("_reg 0xE2: 0x");
-  Serial.println(_reg, HEX);
-
-  _reg = readRegister16(0xE3);
-  Serial.print("_reg 0xE3: 0x");
-  Serial.println(_reg, HEX);
-
-  delay(1000);
+  delay(10);
 }
