@@ -193,129 +193,6 @@ void eraseFlash(uint16_t _address) {
   digitalWrite(MAX35103CE, HIGH);
 }
 
-/*float calculaToF(uint32_t _timeA, uint32_t _timeB, uint32_t _clock, uint32_t _calibration1, uint32_t _calibration2) {
-  float _clockPeriod = 125.0; // em ns
-
-  float _calCountAux1 = (float)_calibration2 - (float)_calibration1;
-  float _calCountAux2 = (float)CALIBRATION2_PERIODS - 1.0;
-  float _calCount =  _calCountAux1 / _calCountAux2;
-  float _normLSB = _clockPeriod / _calCount;
-  float _deltaTime = (float)_timeA - (float)_timeB;
-  float _tofAux1 = _normLSB * _deltaTime;
-  float _tofAux2 = (float)_clock * _clockPeriod;
-  float _tof = _tofAux1 + _tofAux2;
-
-  Serial.print("_calCount: ");
-  Serial.println(_calCount, 6);
-  Serial.print("_normLSB: ");
-  Serial.println(_normLSB, 6);
-  
-  return _tof;
-}
-
-float readToF(uint8_t _tofNumber) {
-  if (_tofNumber >= 1 && _tofNumber <= 5) {
-    uint32_t _timeA = 0;
-    uint32_t _timeB = 0;
-    uint32_t _clock = 0;
-
-    switch (_tofNumber) {
-      case 1:
-        _timeA = readRegister24(TDC7200CSB, TDC7200_TIME1);
-        _timeB = readRegister24(TDC7200CSB, TDC7200_TIME2);
-        _clock = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT1);
-        break;
-      case 2:
-        _timeA = readRegister24(TDC7200CSB, TDC7200_TIME2);
-        _timeB = readRegister24(TDC7200CSB, TDC7200_TIME3);
-        _clock = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT2);
-        break;
-      case 3:
-        _timeA = readRegister24(TDC7200CSB, TDC7200_TIME3);
-        _timeB = readRegister24(TDC7200CSB, TDC7200_TIME4);
-        _clock = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT3);
-        break;
-      case 4:
-        _timeA = readRegister24(TDC7200CSB, TDC7200_TIME4);
-        _timeB = readRegister24(TDC7200CSB, TDC7200_TIME5);
-        _clock = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT4);
-        break;
-      case 5:
-        _timeA = readRegister24(TDC7200CSB, TDC7200_TIME5);
-        _timeB = readRegister24(TDC7200CSB, TDC7200_TIME6);
-        _clock = readRegister24(TDC7200CSB, TDC7200_CLOCK_COUNT5);
-        break;
-    
-    default:
-      return 0.0;
-      break;
-    }
-
-    uint32_t _calibration1 = readRegister24(TDC7200CSB, TDC7200_CALIBRATION1);
-    uint32_t _calibration2 = readRegister24(TDC7200CSB, TDC7200_CALIBRATION2);
-
-    Serial.print("_timeA: ");
-    Serial.println(_timeA);
-    Serial.print("_timeB: ");
-    Serial.println(_timeB);
-
-    Serial.print("_clock: ");
-    Serial.println(_clock);
-
-    Serial.print("_calibration1: ");
-    Serial.println(_calibration1);
-    Serial.print("_calibration2: ");
-    Serial.println(_calibration2);
-
-    Serial.println("");
-
-    if (_clock) {
-      float _tof = calculaToF(_timeA, _timeB, _clock, _calibration1, _calibration2);
-      _tof = _tof / TDC7200_AVG_CYCLES;
-      
-      Serial.print("_tof");
-      Serial.print(_tofNumber);
-      Serial.print(": ");
-      Serial.println(_tof, 6);
-
-      return _tof;
-    }
-    
-    return 0.0;
-
-  }
-  return 0.0;
-}
-
-float fluxoAgua(float _tUp, float _tDown) {
-
-  float _deltaToF = _tUp - _tDown;
-  float _velocidadeAuxA = _deltaToF / 1000.0;  // _deltaToF em us
-  float _velocidadeAuxB = _velocidadeAuxA * 2.196324; // em mm^2/us
-
-  float _velocidadeAuxC = _velocidadeAuxB / 124.0;  // em mm/us
-  float _velocidade = _velocidadeAuxC * 1000.0;  // em m/s
-
-  Serial.print("_deltaToF: ");
-  Serial.println(_deltaToF, 6);
-
-  Serial.print("_velocidadeAuxA: ");
-  Serial.println(_velocidadeAuxA, 6);
-
-  Serial.print("_velocidadeAuxB: ");
-  Serial.println(_velocidadeAuxB, 6);
-
-  Serial.print("_velocidadeAuxC: ");
-  Serial.println(_velocidadeAuxC, 6);
-
-  Serial.print("_velocidade: ");
-  Serial.println(_velocidade, 6);
-
-  float _fluxo = _velocidade * 6.785840; // em l/m
-
-  return _fluxo;
-}*/
-
 float TOF_DIF(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
   // Verificar MSB do _TOF_DIFFInt e sendo 1:
   // A - Inverter todos os demais bits do _TOF_DIFFInt
@@ -365,6 +242,37 @@ float fluxoAgua(float _deltaToF) {
   float _fluxo = _velocidade * 6.785840; // em l/m
 
   return _fluxo;
+}
+
+float registerTemp(uint16_t _TxInt, uint16_t _TxFrac) {
+  uint32_t _registerInt = (uint32_t)_TxInt * 250;
+  float _registerFrac = (float)_TxFrac * 3.814755;
+  _registerFrac = _registerFrac / 1000.0;
+  float _registerTemp = (float)_registerInt + _registerFrac;
+
+  return _registerTemp;
+}
+
+float temperaturaPT1000(float _R, float _R0) {
+  float _A = 3.9083E-3;
+  float _B = -5.775E-7;
+  
+  float _ratio = _R / _R0;
+
+  //T = (0.0-A + sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
+  float _T = 0.0 - _A; 
+  _T += sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
+  _T /= (2.0 * _B);
+
+  if(_T > 0 && _T < 200) { 
+    return _T; 
+  } 
+  
+  //T=  (0.0-A - sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
+  _T = 0.0 - _A; 
+  _T -= sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
+  _T /= (2.0 * _B); 
+  return _T; 
 }
 
 void setup() {
@@ -448,7 +356,7 @@ void setup() {
   writeRegister16(MAX35103_TOF7_W, 0x0048);
   delay(100);
 
-  writeRegister16(MAX35103_EVT_TMN_W, 0x0008);
+  writeRegister16(MAX35103_EVT_TMN_W, 0x006B);
   delay(100);
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
@@ -543,7 +451,9 @@ void setup() {
 
 void loop() {
   if (millis() > leituraAnterior + 1000) {
-    Serial.print("ToF Diff: ");
+    leituraAnterior = millis();
+
+    /*Serial.print("ToF Diff: ");
     opcodeCommand(MAX35103_TOF_Diff);
 
     while (digitalRead(MAX35103INT)) {
@@ -564,9 +474,9 @@ void loop() {
     Serial.println(_TOF_DIFF);
 
     Serial.print("_fluxoAgua: ");
-    Serial.println(_fluxoAgua);
+    Serial.println(_fluxoAgua);*/
 
-    /*Serial.print("Temp: ");
+    Serial.print("Temp: ");
     opcodeCommand(MAX35103_Temperature);
 
     while (digitalRead(MAX35103INT)) {
@@ -578,16 +488,36 @@ void loop() {
       Serial.println("OK!");
     }
 
-    uint16_t _TOF_DIFFInt = readRegister16(0xE2);
-    uint16_t _TOF_DIFFFrac = readRegister16(0xE3);
-    float _TOF_DIFF = TOF_DIF(_TOF_DIFFInt, _TOF_DIFFFrac);
-    float _fluxoAgua = fluxoAgua(_TOF_DIFF);
+    uint16_t _TxInt = readRegister16(0xE7);
+    uint16_t _TxFrac = readRegister16(0xE8);
+    float _timeT1 = registerTemp(_TxInt, _TxFrac);
 
-    Serial.print("TOF_DIFF: ");
-    Serial.println(_TOF_DIFF);
+    _TxInt = readRegister16(0xE9);
+    _TxFrac = readRegister16(0xEA);
+    float _timeT2 = registerTemp(_TxInt, _TxFrac);
 
-    Serial.print("_fluxoAgua: ");
-    Serial.println(_fluxoAgua);*/
+    _TxInt = readRegister16(0xEB);
+    _TxFrac = readRegister16(0xEC);
+    float _timeT3 = registerTemp(_TxInt, _TxFrac);
+
+    _TxInt = readRegister16(0xED);
+    _TxFrac = readRegister16(0xEF);
+    float _timeT4 = registerTemp(_TxInt, _TxFrac);
+
+    float _temperatura1 = temperaturaPT1000(_timeT1, _timeT3);
+    float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
+
+    /*Serial.print("_timeT1: ");
+    Serial.println(_timeT1);
+
+    Serial.print("_timeT3: ");
+    Serial.println(_timeT3);*/
+
+    Serial.print("_temperatura1: ");
+    Serial.println(_temperatura1, 1);
+
+    Serial.print("_temperatura2: ");
+    Serial.println(_temperatura2, 1);
   }
   
 
