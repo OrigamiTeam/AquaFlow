@@ -37,6 +37,8 @@
 #define ledPin 6
 #define btnPin 7
 
+#define pressaoPin 17
+
 unsigned long leituraAnterior = 0;
 
 uint16_t readRegister16(uint8_t _address) {
@@ -290,6 +292,8 @@ void setup() {
   pinMode(MAX35103CE, OUTPUT);
   digitalWrite(MAX35103CE, HIGH);
 
+  pinMode(pressaoPin, INPUT);
+
   SPI.begin();
 
   Serial.println("\n\nIniciando...");
@@ -492,34 +496,55 @@ void loop() {
     uint16_t _TxFrac = readRegister16(0xE8);
     float _timeT1 = registerTemp(_TxInt, _TxFrac);
 
-    _TxInt = readRegister16(0xE9);
+    /*_TxInt = readRegister16(0xE9);
     _TxFrac = readRegister16(0xEA);
-    float _timeT2 = registerTemp(_TxInt, _TxFrac);
+    float _timeT2 = registerTemp(_TxInt, _TxFrac);*/
 
     _TxInt = readRegister16(0xEB);
     _TxFrac = readRegister16(0xEC);
     float _timeT3 = registerTemp(_TxInt, _TxFrac);
 
-    _TxInt = readRegister16(0xED);
+    /*_TxInt = readRegister16(0xED);
     _TxFrac = readRegister16(0xEF);
-    float _timeT4 = registerTemp(_TxInt, _TxFrac);
+    float _timeT4 = registerTemp(_TxInt, _TxFrac);*/
 
     float _temperatura1 = temperaturaPT1000(_timeT1, _timeT3);
-    float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
-
-    /*Serial.print("_timeT1: ");
-    Serial.println(_timeT1);
-
-    Serial.print("_timeT3: ");
-    Serial.println(_timeT3);*/
+    //float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
 
     Serial.print("_temperatura1: ");
     Serial.println(_temperatura1, 1);
 
-    Serial.print("_temperatura2: ");
-    Serial.println(_temperatura2, 1);
+    /*Serial.print("_temperatura2: ");
+    Serial.println(_temperatura2, 1);*/
+
+    uint32_t _pressaoAnalog = analogRead(pressaoPin);
+    uint32_t _pressaoBarInt = map(_pressaoAnalog, 95, 870, 0, 690);
+    float _pressaoBar = (float)_pressaoBarInt / 100.0;
+
+    Serial.print("_pressao: ");
+    Serial.print(_pressaoAnalog);
+    Serial.print(" | ");
+    Serial.print(_pressaoBar);
+    Serial.println(" bar");
+
+    if (_pressaoAnalog < 100) {
+      Serial.println("### Ausencia de agua! ###");
+    }
+
+    /*
+    0 psi = 0,5V
+    100 psi = 4,5V com Vcc de 5,0V
+    100 psi = 2,8V com Vcc de 3,3V
+
+    1 psi = 0,068947 bar
+
+    leitura analogica 0 = 0V
+    leitura analogica 1023 = 3,3V
+
+    0,0 bar = 95
+    6,9 bar = 870
+    */
   }
-  
 
   delay(10);
 }
