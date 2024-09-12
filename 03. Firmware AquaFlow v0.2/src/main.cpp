@@ -31,15 +31,42 @@
 
 #define MAX35103_INT_STATUS_R 0xFE
 
+// Pino para botao com acesso externo
+#define btnPin 2
+
+// Pinos para interface com MAX35103
 #define MAX35103INT 3
+#define MAX35103RST 4
 #define MAX35103CE 10
 
-#define ledPin 6
-#define btnPin 7
+// Pinos para acionamento do driver de motor DC e sensores fim de curso
+#define SW1Pin 5
+#define SW2Pin 6
+#define motorSleepPin 7
+#define motorIN1Pin 8
+#define motorIN2Pin 9
 
-#define pressaoPin 17
+// Pino para leitura analogica do sensor de pressao
+#define pressaoPin 14
+
+// Pinos para interface com display NHD-C12832A1Z-FSW-FBW-3V3
+#define LCD_SI 15
+#define LCD_SCL 16
+#define LCD_A0 17
+#define LCD_LED 23
+#define LCD_RST 25
+#define LCD_CS 26
+
+// Pinos para interface externa com modulos de comunicacao (SPI compartilhado com SS dedicado, RS-232 dedicado e I2C dedicado)
+#define RS232_RX_EXT 0
+#define RX232_TX_EXT 1
+#define I2C_SDA_EXT 18
+#define I2C_SCL_EXT 19
+#define SPI_SS_EXT 24
 
 unsigned long leituraAnterior = 0;
+
+// LEITURA DE FLUXO E TEMPERATURA (MAX35103)
 
 uint16_t readRegister16(uint8_t _address) {
   digitalWrite(MAX35103CE, LOW);
@@ -277,27 +304,248 @@ float temperaturaPT1000(float _R, float _R0) {
   return _T; 
 }
 
+// DISPLAY NHD-C12832A1Z
+
+void dataWrite(unsigned char d) // Data Output Serial Interface
+{
+  digitalWrite(LCD_CS, LOW);
+  digitalWrite(LCD_A0, HIGH);
+  for (unsigned int n = 0; n < 8; n++)
+  {
+    if ((d & 0x80) == 0x80)
+      digitalWrite(LCD_SI, HIGH);
+    else
+      digitalWrite(LCD_SI, LOW);
+    while (0);
+    d = (d << 1);
+    digitalWrite(LCD_SCL, LOW);
+    while (0);
+    digitalWrite(LCD_SCL, HIGH);
+    while (0);
+    digitalWrite(LCD_SCL, LOW);
+  }
+  digitalWrite(LCD_CS, HIGH);
+}
+
+void commWrite(unsigned char d) // Command Output Serial Interface
+{
+  digitalWrite(LCD_CS, LOW);
+  digitalWrite(LCD_A0, LOW);
+  for (unsigned int n = 0; n < 8; n++)
+  {
+    if ((d & 0x80) == 0x80)
+      digitalWrite(LCD_SI, HIGH);
+    else
+      digitalWrite(LCD_SI, LOW);
+    while (0);
+    d = (d << 1);
+    digitalWrite(LCD_SCL, LOW);
+    while (0);
+    digitalWrite(LCD_SCL, HIGH);
+    while (0);
+    digitalWrite(LCD_SCL, LOW);
+  }
+  digitalWrite(LCD_CS, HIGH);
+}
+
+void DispPic(unsigned char *lcd_string) {
+  unsigned char page = 0xB0;
+  commWrite(0xAE); // Display OFF
+  commWrite(0x40); // Display start address + 0x40
+  for (unsigned int i = 0; i < 4; i++)
+  {                   // 32pixel display / 8 pixels per page = 4 pages
+    commWrite(page); // send page address
+    commWrite(0x10); // column address upper 4 bits + 0x10
+    commWrite(0x00); // column address lower 4 bits + 0x00
+    for (unsigned int j = 0; j < 128; j++)
+    {                          // 128 columns wide
+      dataWrite(*lcd_string); // send picture data
+      lcd_string++;
+    }
+    page++; // after 128 columns, go to next page
+  }
+  commWrite(0xAF);
+}
+
+void ClearLCD(unsigned char *lcd_string) {
+  unsigned char page = 0xB0;
+  commWrite(0xAE); // Display OFF
+  commWrite(0x40); // Display start address + 0x40
+  for (unsigned int i = 0; i < 4; i++)
+  {                   // 32pixel display / 8 pixels per page = 4 pages
+    commWrite(page); // send page address
+    commWrite(0x10); // column address upper 4 bits + 0x10
+    commWrite(0x00); // column address lower 4 bits + 0x00
+    for (unsigned int j = 0; j < 128; j++)
+    {                   // 128 columns wide
+      dataWrite(0x00); // send picture data
+      lcd_string++;
+    }
+    page++; // after 128 columns, go to next page
+  }
+  commWrite(0xAF);
+}
+
+void InitLCD() {
+  commWrite(0xA0); // ADC select
+  commWrite(0xAE); // Display OFF
+  commWrite(0xC8); // COM direction scan
+  commWrite(0xA2); // LCD bias set
+  commWrite(0x2F); // Power Control set
+  commWrite(0x21); // Resistor Ratio Set
+  commWrite(0x81); // Electronic Volume Command (set contrast) Double Btye: 1 of 2
+  commWrite(0x20); // Electronic Volume value (contrast value) Double Byte: 2 of 2
+  commWrite(0xAF); // Display ON
+}
+
+// MOTOR
+
+boolean abreValvula() {
+  if(!digitalRead(SW1Pin)) {
+    delay(20);
+    if (!digitalRead(SW1Pin)) {
+      return true;
+    }
+  }
+
+  digitalWrite(motorIN1Pin, HIGH);
+  digitalWrite(motorIN2Pin, LOW);
+
+  uint32_t _cont = 0;
+  boolean _aguardar = true;
+  while(_aguardar) {
+    if(_cont > 1500) {
+      digitalWrite(motorIN1Pin, LOW);
+      return false;
+    }
+
+    if(!digitalRead(SW1Pin)) {
+      delay(20);
+      if (!digitalRead(SW1Pin)) {
+        digitalWrite(motorIN1Pin, LOW);
+        _aguardar = false;
+      }
+    }
+
+    delay(10);
+    _cont++;
+  }
+  return true;
+}
+
+boolean fechaValvula() {
+  if(!digitalRead(SW2Pin)) {
+    delay(20);
+    if (!digitalRead(SW2Pin)) {
+      return true;
+    }
+  }
+
+  digitalWrite(motorIN1Pin, LOW);
+  digitalWrite(motorIN2Pin, HIGH);
+
+  uint32_t _cont = 0;
+  boolean _aguardar = true;
+  while(_aguardar) {
+    if(_cont > 1500) {
+      digitalWrite(motorIN2Pin, LOW);
+      return false;
+    }
+
+    if(!digitalRead(SW2Pin)) {
+      delay(20);
+      if (!digitalRead(SW2Pin)) {
+        digitalWrite(motorIN2Pin, LOW);
+        _aguardar = false;
+      }
+    }
+
+    delay(10);
+    _cont++;
+  }
+  return true;
+}
+
+boolean abreValvulaParcial(uint32_t _tempoMilis) {
+  if (!fechaValvula()) {
+    return false;
+  }
+  delay(250);
+
+  digitalWrite(motorIN1Pin, HIGH);
+  digitalWrite(motorIN2Pin, LOW);
+
+  unsigned long _tempoInicial = millis();
+  while (millis() < _tempoInicial + _tempoMilis) {
+
+    if(!digitalRead(SW1Pin)) {
+      delay(20);
+      if (!digitalRead(SW1Pin)) {
+        digitalWrite(motorIN1Pin, LOW);
+        return false;
+      }
+    }
+
+    delay(10);
+  }
+  
+  digitalWrite(motorIN1Pin, LOW);
+  return true;
+}
+
+// SETUP
+
 void setup() {
-  Serial.begin(115200);
+  pinMode(btnPin, INPUT);
+  //digitalWrite(btnPin, HIGH); // Pullup externo
 
   pinMode(MAX35103INT, INPUT);
   digitalWrite(MAX35103INT, HIGH);
 
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
-
-  pinMode(btnPin, INPUT);
-  digitalWrite(btnPin, HIGH);
+  pinMode(MAX35103RST, OUTPUT);
+  digitalWrite(MAX35103RST, HIGH);
 
   pinMode(MAX35103CE, OUTPUT);
   digitalWrite(MAX35103CE, HIGH);
 
+  pinMode(SW1Pin, INPUT);
+  //digitalWrite(SW1Pin, HIGH); // Pullup externo
+
+  pinMode(SW2Pin, INPUT);
+  //digitalWrite(SW2Pin, HIGH); // Pullup externo
+
+  pinMode(motorSleepPin, OUTPUT);
+  digitalWrite(motorSleepPin, LOW); // LOW = sleep
+
+  pinMode(motorIN1Pin, OUTPUT);
+  digitalWrite(motorIN1Pin, LOW);
+
+  pinMode(motorIN2Pin, OUTPUT);
+  digitalWrite(motorIN2Pin, LOW);
+
   pinMode(pressaoPin, INPUT);
+
+  pinMode(LCD_SI, OUTPUT);
+  pinMode(LCD_SCL, OUTPUT);
+  pinMode(LCD_A0, OUTPUT);
+  pinMode(LCD_RST, OUTPUT);
+  pinMode(LCD_CS, OUTPUT);
+
+  digitalWrite(LCD_RST, LOW);
+  delay(100);
+  digitalWrite(LCD_RST, HIGH);
+  delay(100);
+  InitLCD();
 
   SPI.begin();
 
+  /////////////////////////////////////////////////
+  Serial.begin(115200);
+  delay(100);
+
   Serial.println("\n\nIniciando...");
   delay(100);
+  /////////////////////////////////////////////////
 
   opcodeCommand(MAX35103_Reset);
   delay(100);
