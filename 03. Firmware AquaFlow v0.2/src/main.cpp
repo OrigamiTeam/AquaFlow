@@ -306,6 +306,8 @@ float temperaturaPT1000(float _R, float _R0) {
 
 // DISPLAY NHD-C12832A1Z
 
+
+
 void dataWrite(unsigned char d) // Data Output Serial Interface
 {
   digitalWrite(LCD_CS, LOW);
@@ -407,7 +409,8 @@ boolean abreValvula() {
       return true;
     }
   }
-
+  digitalWrite(motorSleepPin, HIGH);
+  delay(10);
   digitalWrite(motorIN1Pin, HIGH);
   digitalWrite(motorIN2Pin, LOW);
 
@@ -416,6 +419,7 @@ boolean abreValvula() {
   while(_aguardar) {
     if(_cont > 1500) {
       digitalWrite(motorIN1Pin, LOW);
+      digitalWrite(motorSleepPin, LOW);
       return false;
     }
 
@@ -423,6 +427,7 @@ boolean abreValvula() {
       delay(20);
       if (!digitalRead(SW1Pin)) {
         digitalWrite(motorIN1Pin, LOW);
+        digitalWrite(motorSleepPin, LOW);
         _aguardar = false;
       }
     }
@@ -441,6 +446,8 @@ boolean fechaValvula() {
     }
   }
 
+  digitalWrite(motorSleepPin, HIGH);
+  delay(10);
   digitalWrite(motorIN1Pin, LOW);
   digitalWrite(motorIN2Pin, HIGH);
 
@@ -449,6 +456,7 @@ boolean fechaValvula() {
   while(_aguardar) {
     if(_cont > 1500) {
       digitalWrite(motorIN2Pin, LOW);
+      digitalWrite(motorSleepPin, LOW);
       return false;
     }
 
@@ -456,6 +464,7 @@ boolean fechaValvula() {
       delay(20);
       if (!digitalRead(SW2Pin)) {
         digitalWrite(motorIN2Pin, LOW);
+        digitalWrite(motorSleepPin, LOW);
         _aguardar = false;
       }
     }
@@ -472,6 +481,8 @@ boolean abreValvulaParcial(uint32_t _tempoMilis) {
   }
   delay(250);
 
+  digitalWrite(motorSleepPin, HIGH);
+  delay(10);
   digitalWrite(motorIN1Pin, HIGH);
   digitalWrite(motorIN2Pin, LOW);
 
@@ -482,6 +493,7 @@ boolean abreValvulaParcial(uint32_t _tempoMilis) {
       delay(20);
       if (!digitalRead(SW1Pin)) {
         digitalWrite(motorIN1Pin, LOW);
+        digitalWrite(motorSleepPin, LOW);
         return false;
       }
     }
@@ -490,6 +502,7 @@ boolean abreValvulaParcial(uint32_t _tempoMilis) {
   }
   
   digitalWrite(motorIN1Pin, LOW);
+  digitalWrite(motorSleepPin, LOW);
   return true;
 }
 
