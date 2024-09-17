@@ -150,14 +150,14 @@ boolean MAX35103::initialize() {
   return true;
 }
 
-uint16_t MAX35103::readFlash16(uint16_t _address) {
+/*uint16_t MAX35103::readFlash16(uint16_t _address) {
   opcodeCommand(MAX35103_LDO_Timed);
   delay(100);
 
   while (interruptStatus(10) == 0) {
     delay(100);
   }
-  Serial.println("LDO ON e Estavel!");
+  //Serial.println("LDO ON e Estavel!");
 
   uint8_t _addr1 = (_address >> 8) & 0xFF;
   uint8_t _addr2 = _address & 0xFF;
@@ -190,7 +190,7 @@ void MAX35103::writeFlash16(uint16_t _address, uint16_t _value) {
   while (interruptStatus(10) == 0) {
     delay(100);
   }
-  Serial.println("LDO ON e Estavel!");
+  //Serial.println("LDO ON e Estavel!");
 
   uint8_t _addr1 = (_address >> 8) & 0xFF;
   uint8_t _addr2 = _address & 0xFF;
@@ -221,7 +221,7 @@ void MAX35103::eraseFlash(uint16_t _address) {
   while (interruptStatus(10) == 0) {
     delay(100);
   }
-  Serial.println("LDO ON e Estavel!");
+  //Serial.println("LDO ON e Estavel!");
 
   uint8_t _addr1 = (_address >> 8) & 0xFF;
   uint8_t _addr2 = _address & 0xFF;
@@ -239,9 +239,9 @@ void MAX35103::eraseFlash(uint16_t _address) {
 
   delay(10);
   digitalWrite(_cePin, HIGH);
-}
+}*/
 
-float MAX35103::TOF_DIF(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
+float MAX35103::ToF_Diff(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
   // Verificar MSB do _TOF_DIFFInt e sendo 1:
   // A - Inverter todos os demais bits do _TOF_DIFFInt
   // B - Inverter todos os bits de _TOF_DIFFFrac
@@ -292,6 +292,59 @@ float MAX35103::fluxoAgua(float _deltaToF) {
   return _fluxo;
 }
 
+boolean MAX35103::fluxoToFDIff(float *_fluxo) {
+  opcodeCommand(MAX35103_TOF_Diff);
+
+  unsigned long _millisInicio = millis();
+  while (digitalRead(_intPin)) {
+    delay(50);
+
+    if (millis() > _millisInicio + _timeout) {
+      return false;
+    }
+  }
+
+  // interruptStatus(15) indica timeout!
+  if (!interruptStatus(12)) {
+    return false;
+  }
+
+  uint16_t _ToF_DiffInt = readRegister16(0xE2);
+  uint16_t _ToF_DiffFrac = readRegister16(0xE3);
+  float _ToF_Diff = ToF_Diff(_ToF_DiffInt, _ToF_DiffFrac);
+  float _fluxoAgua = fluxoAgua(_ToF_Diff);
+
+  *_fluxo = _fluxoAgua;
+  return true;
+}
+
+boolean MAX35103::fluxoToFDIff(float *_fluxo, float *_ToFDiff) {
+  opcodeCommand(MAX35103_TOF_Diff);
+
+  unsigned long _millisInicio = millis();
+  while (digitalRead(_intPin)) {
+    delay(50);
+
+    if (millis() > _millisInicio + _timeout) {
+      return false;
+    }
+  }
+
+  // interruptStatus(15) indica timeout!
+  if (!interruptStatus(12)) {
+    return false;
+  }
+
+  uint16_t _ToF_DiffInt = readRegister16(0xE2);
+  uint16_t _ToF_DiffFrac = readRegister16(0xE3);
+  float _ToF_Diff = ToF_Diff(_ToF_DiffInt, _ToF_DiffFrac);
+  float _fluxoAgua = fluxoAgua(_ToF_Diff);
+
+  *_ToFDiff = _ToF_Diff;
+  *_fluxo = _fluxoAgua;
+  return true;
+}
+
 float MAX35103::registerTemp(uint16_t _TxInt, uint16_t _TxFrac) {
   uint32_t _registerInt = (uint32_t)_TxInt * 250;
   float _registerFrac = (float)_TxFrac * 3.814755;
@@ -321,4 +374,68 @@ float MAX35103::temperaturaPT1000(float _R, float _R0) {
   _T -= sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
   _T /= (2.0 * _B); 
   return _T; 
+}
+
+boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
+  if (_sensor == 1) {
+    opcodeCommand(MAX35103_Temperature);
+
+    unsigned long _millisInicio = millis();
+    while (digitalRead(_intPin)) {
+      delay(50);
+
+      if (millis() > _millisInicio + _timeout) {
+        return false;
+      }
+    }
+
+    // interruptStatus(15) indica timeout!
+    if (!interruptStatus(11)) {
+      return false;
+    }
+
+    uint16_t _TxInt = readRegister16(0xE7);
+    uint16_t _TxFrac = readRegister16(0xE8);
+    float _timeT1 = registerTemp(_TxInt, _TxFrac);
+
+    _TxInt = readRegister16(0xEB);
+    _TxFrac = readRegister16(0xEC);
+    float _timeT3 = registerTemp(_TxInt, _TxFrac);
+
+    float _temp = temperaturaPT1000(_timeT1, _timeT3);
+
+    *_temperatura = _temp;
+    return true;
+  }
+  /*else if (_sensor == 2) {
+    opcodeCommand(MAX35103_Temperature);
+
+    unsigned long _millisInicio = millis();
+    while (digitalRead(_intPin)) {
+      delay(50);
+
+      if (millis() > _millisInicio + _timeout) {
+        return false;
+      }
+    }
+
+    // interruptStatus(15) indica timeout!
+    if (!interruptStatus(11)) {
+      return false;
+    }
+
+    uint16_t _TxInt = readRegister16(0xE9);
+    uint16_t _TxFrac = readRegister16(0xEA);
+    float _timeT2 = registerTemp(_TxInt, _TxFrac);
+
+    _TxInt = readRegister16(0xED);
+    _TxFrac = readRegister16(0xEE);
+    float _timeT4 = registerTemp(_TxInt, _TxFrac);
+
+    float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
+
+    Serial.print("_temperatura2: ");
+    Serial.println(_temperatura2, 1);
+  }*/
+  return false;
 }

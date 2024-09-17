@@ -78,7 +78,25 @@ void displayST7565R::dataWrite(unsigned char _d) {
   digitalWrite(CS_PIN, HIGH);
 }
 
-void displayST7565R::write (unsigned char *_lcd_string, uint8_t _inicio, uint8_t _tamanho) {
+void displayST7565R::writeNumber (unsigned char *_lcd_string, uint8_t _inicio) {
+  unsigned char page = 0xB0;
+  commWrite(0xAE); // Display OFF
+  commWrite(0x40); // Display start address + 0x40
+  // 32pixel display / 8 pixels per page = 4 pages
+  for (unsigned int i = 0; i < 4; i++) {
+    commWrite(page); // send page address
+    commWrite(0x10 + (_inicio >> 4)); // column address upper 4 bits + 0x10
+    commWrite(0x00 + (_inicio & 0x0F)); // column address lower 4 bits + 0x00
+    for (unsigned int j = 0; j < 14; j++) {
+      dataWrite(*_lcd_string); // send picture data
+      _lcd_string++;
+    }
+    page++; // after the columns, go to next page
+  }
+  commWrite(0xAF);
+}
+
+void displayST7565R::writeSymbol (unsigned char *_lcd_string, uint8_t _inicio, uint8_t _tamanho) {
   unsigned char page = 0xB0;
   commWrite(0xAE); // Display OFF
   commWrite(0x40); // Display start address + 0x40

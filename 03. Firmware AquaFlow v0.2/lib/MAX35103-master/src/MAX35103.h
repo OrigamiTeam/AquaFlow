@@ -43,6 +43,9 @@ class MAX35103 {
     boolean reset();
     boolean toFlash();
     boolean initialize();
+    boolean temperatura(uint8_t _sensor, float *_temperatura);
+    boolean fluxoToFDIff(float *_fluxo);
+    boolean fluxoToFDIff(float *_fluxo, float *_ToFDiff);
 
     private:
     uint8_t _intPin = 0;
@@ -54,13 +57,13 @@ class MAX35103 {
     void writeRegister16(uint8_t _address, uint16_t _value);
     void opcodeCommand(uint8_t _command);
     boolean interruptStatus(uint8_t _bit);
-    uint16_t readFlash16(uint16_t _address);
-    void writeFlash16(uint16_t _address, uint16_t _value);
-    void eraseFlash(uint16_t _address);
-    float TOF_DIF(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac);
+    float ToF_Diff(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac);
     float fluxoAgua(float _deltaToF);
     float registerTemp(uint16_t _TxInt, uint16_t _TxFrac);
     float temperaturaPT1000(float _R, float _R0);
+    //uint16_t readFlash16(uint16_t _address);
+    //void writeFlash16(uint16_t _address, uint16_t _value);
+    //void eraseFlash(uint16_t _address);
 };
 
 #endif
