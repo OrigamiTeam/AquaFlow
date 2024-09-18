@@ -37,27 +37,27 @@ void MAX35103::writeRegister16(uint8_t _address, uint16_t _value) {
 
 void MAX35103::config() {
   writeRegister16(MAX35103_TOF1_W, 0x1311);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF2_W, 0xA4F2);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF3_W, 0x0A0B);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF4_W, 0x0C0D);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF5_W, 0x0E0F);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF6_W, 0x0048);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_TOF7_W, 0x0048);
-  delay(100);
+  delay(10);
 
   writeRegister16(MAX35103_EVT_TMN_W, 0x006B);
-  delay(100);
+  delay(10);
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
-  delay(100);
+  delay(10);
   writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
-  delay(100);
+  delay(10);
 }
 
 uint16_t MAX35103::readRegister16(uint8_t _address) {

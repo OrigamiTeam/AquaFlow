@@ -52,10 +52,11 @@ const unsigned char numeros [10][56] PROGMEM = {
   {0xF8, 0xF8, 0xF8, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0xF8, 0xF8, 0xF8, 0xFF, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xC0, 0xFF, 0xFF, 0xFF, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0F, 0x0F, 0x0F}
 };
 
-const unsigned char simbolos [2][60] PROGMEM = {
-  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x0E},
-  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x60, 0x60, 0x60, 0xE0, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x60, 0x66, 0x66, 0x7F, 0x7F, 0xFE, 0xFE, 0x06, 0x06, 0x06, 0xFE, 0xFE, 0x06, 0x06, 0x06, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00}
-};
+const unsigned char simboloPonto [8] PROGMEM = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x0E};
+const unsigned char simboloM3 [60] PROGMEM = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x60, 0x60, 0x60, 0xE0, 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x60, 0x66, 0x66, 0x7F, 0x7F, 0xFE, 0xFE, 0x06, 0x06, 0x06, 0x7E, 0x7E, 0x06, 0x06, 0x06, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00};
+const unsigned char simboloLMin [168] PROGMEM = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFE, 0x1E, 0x00, 0x00, 0xFE, 0xFE, 0x06, 0x06, 0x06, 0x7E, 0x7E, 0x06, 0x06, 0x06, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0xF6, 0xF6, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0x06, 0x06, 0x06, 0xFE, 0xFE, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x00, 0x00, 0x0F, 0x0F, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F};
+const unsigned char simboloCelsius [48] PROGMEM = {0x38, 0x38, 0x38, 0x00, 0x00, 0xF8, 0xF8, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x3F, 0x30, 0x30, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const unsigned char simboloBar [108] PROGMEM = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0x66, 0x66, 0x66, 0xFE, 0xFC, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0x66, 0x66, 0x66, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0xE6, 0xE6, 0xE6, 0x7E, 0x7E, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F, 0x07, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x00, 0x01, 0x03, 0x0F, 0x0E};
 
 unsigned long leituraAnterior = 0;
 
@@ -63,120 +64,9 @@ MAX35103 MAX;
 valvulaMotorDC valvula;
 displayST7565R LCD;
 
-// DISPLAY
+// ### MAX35103 ###
 
-void PGMReadNumber(unsigned char *_vetor, uint8_t _posicao) {
-  for (uint8_t _i = 0; _i < 56; _i++) {
-    _vetor[_i] = pgm_read_byte(&(numeros[_posicao][_i]));
-  }
-}
-
-void PGMreadSymbol(unsigned char *_vetor, uint8_t _numero, uint8_t _tamanho) {
-  for (uint8_t _i = 0; _i < _tamanho; _i++) {
-    _vetor[_i] = pgm_read_byte(&(simbolos[_numero][_i]));
-  }
-}
-
-// _volumeInt deve ser um numero uint32_t formado pelo fluxo em float multiplicado por 10, ou seja, a unidade sera exibida como casa decimal
-void volumeLCD(uint32_t _volumeInt) {
-  String _volumeString = "";
-
-  if (_volumeInt < 100000) {
-    _volumeString.concat("0");
-  }
-  if (_volumeInt < 10000) {
-    _volumeString.concat("0");
-  }
-  if (_volumeInt < 1000) {
-    _volumeString.concat("0");
-  }
-  if (_volumeInt < 100) {
-    _volumeString.concat("0");
-  }
-  if (_volumeInt < 10) {
-    _volumeString.concat("0");
-  }
-  
-  _volumeString.concat(_volumeInt);
-  uint32_t _length = _volumeString.length();
-
-  unsigned char _char [60] = {};
-
-  PGMReadNumber(_char, _volumeString[_length - 6] - '0');
-  LCD.writeNumber(_char, 0);
-
-  PGMReadNumber(_char, _volumeString[_length - 5] - '0');
-  LCD.writeNumber(_char, 18);
-  
-  PGMReadNumber(_char, _volumeString[_length - 4] - '0');
-  LCD.writeNumber(_char, 36);
-  
-  PGMReadNumber(_char, _volumeString[_length - 3] - '0');
-  LCD.writeNumber(_char, 54);
-  
-  PGMReadNumber(_char, _volumeString[_length - 2] - '0');
-  LCD.writeNumber(_char, 72);
-
-  // simbolo de . (ponto decimal)
-  PGMreadSymbol(_char, 0, 8); // 8 bytes no vetor
-  LCD.writeSymbol(_char, 89, 2); // 2 colunas no display
-  
-  PGMReadNumber(_char, _volumeString[_length - 1] - '0');
-  LCD.writeNumber(_char, 94);
-  
-  // simbolo de m3 (metro cubico)
-  PGMreadSymbol(_char, 1, 60); // 60 bytes no vetor
-  LCD.writeSymbol(_char, 113, 15); // 15 colunas no display
-}
-
-void setup() {
-  pinMode(LCD_LED, OUTPUT);
-  digitalWrite(LCD_LED, LOW);
-
-  pinMode(btnPin, INPUT);
-  //digitalWrite(btnPin, HIGH); // Pullup externo
-
-  pinMode(pressaoPin, INPUT);
-
-  //MAX.begin(MAX35103INT, MAX35103RST, MAX35103CE);
-
-  //valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
-  //valvula.abre();
-
-  LCD.begin(LCD_SI, LCD_SCL, LCD_A0, LCD_RST, LCD_CS);
-  delay(10);
-  LCD.clear(0, 128);
-
-  /////////////////////////////////////////////////
-  digitalWrite(LCD_LED, HIGH);
-  delay(100);
-  
-  volumeLCD(123456);
-  delay(1500);
-  LCD.clear(0, 128);
-  delay(1);
-  
-  digitalWrite(LCD_LED, LOW);
-  /////////////////////////////////////////////////
-
-  /////////////////////////////////////////////////
-  Serial.begin(115200);
-  delay(100);
-
-  Serial.println(F("\n\nIniciando..."));
-  delay(100);
-  /////////////////////////////////////////////////
-
-  if (MAX.reset()) {
-    Serial.println(F("MAX35103 Reset OK!"));
-  }
-  else {
-    Serial.println(F("ERRO no Reset do MAX35103"));
-  }
-
-  delay(500);
-
-  /*uint16_t _dado = readFlash16(0x0000);
+/*uint16_t _dado = readFlash16(0x0000);
   Serial.print("_dado: ");
   Serial.println(_dado, HEX);
   delay(500);
@@ -211,9 +101,8 @@ void setup() {
   Serial.println(_dado, HEX);
 
   delay(500);*/
-  
-  MAX.config();
 
+void printConfigMAX() {
   uint16_t _reg = MAX.readRegister16(0xB8);
   Serial.print("TOF1 0xB8: ");
   Serial.print(_reg, BIN);
@@ -273,6 +162,271 @@ void setup() {
   Serial.print(_reg, BIN);
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
+}
+
+// ### MAX35103 ###
+
+// ### DISPLAY ###
+
+void PGMReadNumeros(unsigned char *_vetor, uint8_t _posicao) {
+  for (uint8_t _i = 0; _i < 56; _i++) {
+    _vetor[_i] = pgm_read_byte(&(numeros[_posicao][_i]));
+  }
+}
+
+void PGMreadSimboloPonto(unsigned char *_vetor) {
+  for (uint8_t _i = 0; _i < 8; _i++) {
+    _vetor[_i] = pgm_read_byte(&(simboloPonto[_i]));
+  }
+}
+
+void PGMreadSimboloM3(unsigned char *_vetor) {
+  for (uint8_t _i = 0; _i < 60; _i++) {
+    _vetor[_i] = pgm_read_byte(&(simboloM3[_i]));
+  }
+}
+
+void PGMreadSimboloLMin(unsigned char *_vetor) {
+  for (uint8_t _i = 0; _i < 168; _i++) {
+    _vetor[_i] = pgm_read_byte(&(simboloLMin[_i]));
+  }
+}
+
+void PGMreadSimboloCelsius(unsigned char *_vetor) {
+  for (uint8_t _i = 0; _i < 48; _i++) {
+    _vetor[_i] = pgm_read_byte(&(simboloCelsius[_i]));
+  }
+}
+
+void PGMreadSimboloBar(unsigned char *_vetor) {
+  for (uint8_t _i = 0; _i < 108; _i++) {
+    _vetor[_i] = pgm_read_byte(&(simboloBar[_i]));
+  }
+}
+
+// _volumeInt deve ser um numero uint32_t formado pelo volume em float multiplicado por 10, ou seja, a unidade sera exibida como casa decimal
+void volumeLCD(uint32_t _volumeInt) {
+  String _string = "";
+
+  if (_volumeInt < 100000) {
+    _string.concat("0");
+  }
+  if (_volumeInt < 10000) {
+    _string.concat("0");
+  }
+  if (_volumeInt < 1000) {
+    _string.concat("0");
+  }
+  if (_volumeInt < 100) {
+    _string.concat("0");
+  }
+  if (_volumeInt < 10) {
+    _string.concat("0");
+  }
+  
+  _string.concat(_volumeInt);
+  uint32_t _length = _string.length();
+
+  unsigned char _char [60] = {};
+
+  PGMReadNumeros(_char, _string[_length - 6] - '0');
+  LCD.writeNumber(_char, 0);
+
+  PGMReadNumeros(_char, _string[_length - 5] - '0');
+  LCD.writeNumber(_char, 18);
+  
+  PGMReadNumeros(_char, _string[_length - 4] - '0');
+  LCD.writeNumber(_char, 36);
+  
+  PGMReadNumeros(_char, _string[_length - 3] - '0');
+  LCD.writeNumber(_char, 54);
+  
+  PGMReadNumeros(_char, _string[_length - 2] - '0');
+  LCD.writeNumber(_char, 72);
+
+  // simbolo de . (ponto decimal)
+  PGMreadSimboloPonto(_char);
+  LCD.writeSymbol(_char, 89, 2); // 2 colunas no display
+  
+  PGMReadNumeros(_char, _string[_length - 1] - '0');
+  LCD.writeNumber(_char, 94);
+  
+  // simbolo de m3 (metro cubico)
+  PGMreadSimboloM3(_char);
+  LCD.writeSymbol(_char, 113, 15); // 15 colunas no display
+}
+
+// _fluxoInt deve ser um numero uint32_t formado pelo fluxo em float multiplicado por 10, ou seja, a unidade sera exibida como casa decimal
+void fluxoLCD(uint32_t _fluxoInt, uint8_t _inicio) {
+  String _string = "";
+
+  if (_fluxoInt < 100) {
+    _string.concat("0");
+  }
+  if (_fluxoInt < 10) {
+    _string.concat("0");
+  }
+  
+  _string.concat(_fluxoInt);
+  uint32_t _length = _string.length();
+
+  unsigned char _char [168] = {};
+  
+  PGMReadNumeros(_char, _string[_length - 3] - '0');
+  LCD.writeNumber(_char, _inicio);
+  
+  PGMReadNumeros(_char, _string[_length - 2] - '0');
+  LCD.writeNumber(_char, _inicio + 18);
+
+  // simbolo de . (ponto decimal)
+  PGMreadSimboloPonto(_char);
+  LCD.writeSymbol(_char, _inicio + 35, 2); // 2 colunas no display
+  
+  PGMReadNumeros(_char, _string[_length - 1] - '0');
+  LCD.writeNumber(_char, _inicio + 40);
+  
+  // simbolo de L/MIN (litro por minuto)
+  PGMreadSimboloLMin(_char);
+  LCD.writeSymbol(_char, _inicio + 59, 42); // 42 colunas no display
+}
+
+// _tempInt deve ser um numero uint32_t formado pela temperatura em float multiplicado por 10, ou seja, a unidade sera exibida como casa decimal
+void temperaturaLCD(uint32_t _tempInt, uint8_t _inicio) {
+  String _string = "";
+
+  if (_tempInt < 100) {
+    _string.concat("0");
+  }
+  if (_tempInt < 10) {
+    _string.concat("0");
+  }
+  
+  _string.concat(_tempInt);
+  uint32_t _length = _string.length();
+
+  unsigned char _char [56] = {};
+  
+  PGMReadNumeros(_char, _string[_length - 3] - '0');
+  LCD.writeNumber(_char, _inicio);
+  
+  PGMReadNumeros(_char, _string[_length - 2] - '0');
+  LCD.writeNumber(_char, _inicio + 18);
+
+  // simbolo de . (ponto decimal)
+  PGMreadSimboloPonto(_char);
+  LCD.writeSymbol(_char, _inicio + 35, 2); // 2 colunas no display
+  
+  PGMReadNumeros(_char, _string[_length - 1] - '0');
+  LCD.writeNumber(_char, _inicio + 40);
+  
+  // simbolo de ºC (celsius)
+  PGMreadSimboloCelsius(_char);
+  LCD.writeSymbol(_char, _inicio + 59, 12); // 12 colunas no display
+}
+
+// _presaoInt deve ser um numero uint32_t formado pela temperatura em float multiplicado por 10, ou seja, a unidade sera exibida como casa decimal
+void pressaoLCD(uint32_t _presaoInt, uint8_t _inicio) {
+  String _string = "";
+
+  if (_presaoInt < 100) {
+    _string.concat("0");
+  }
+  if (_presaoInt < 10) {
+    _string.concat("0");
+  }
+  
+  _string.concat(_presaoInt);
+  uint32_t _length = _string.length();
+
+  unsigned char _char [108] = {};
+  
+  PGMReadNumeros(_char, _string[_length - 3] - '0');
+  LCD.writeNumber(_char, _inicio);
+  
+  PGMReadNumeros(_char, _string[_length - 2] - '0');
+  LCD.writeNumber(_char, _inicio + 18);
+
+  // simbolo de . (ponto decimal)
+  PGMreadSimboloPonto(_char);
+  LCD.writeSymbol(_char, _inicio + 35, 2); // 2 colunas no display
+  
+  PGMReadNumeros(_char, _string[_length - 1] - '0');
+  LCD.writeNumber(_char, _inicio + 40);
+  
+  // simbolo de bar
+  PGMreadSimboloBar(_char);
+  LCD.writeSymbol(_char, _inicio + 59, 27); // 27 colunas no display
+}
+
+// ### DISPLAY ###
+
+void setup() {
+  pinMode(LCD_LED, OUTPUT);
+  digitalWrite(LCD_LED, LOW);
+
+  pinMode(btnPin, INPUT);
+  //digitalWrite(btnPin, HIGH); // Pullup externo
+
+  pinMode(pressaoPin, INPUT);
+
+  MAX.begin(MAX35103INT, MAX35103RST, MAX35103CE);
+
+  //valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
+  //valvula.abre();
+
+  LCD.begin(LCD_SI, LCD_SCL, LCD_A0, LCD_RST, LCD_CS);
+  delay(10);
+  LCD.clear(0, 128);
+
+  /////////////////////////////////////////////////
+  digitalWrite(LCD_LED, HIGH);
+  delay(100);
+
+  while (true) {
+    volumeLCD(234567);
+    delay(3000);
+    LCD.clear(0, 128);
+    delay(1);
+
+    fluxoLCD(712, 14); // inicio em 14
+    delay(3000);
+    LCD.clear(0, 128);
+    delay(1);
+
+    temperaturaLCD(293, 29); // inicio em 29
+    delay(3000);
+    LCD.clear(0, 128);
+    delay(1);
+
+    pressaoLCD(53, 21); // inicio em 21
+    delay(3000);
+    LCD.clear(0, 128);
+    delay(1);
+  }
+  
+  digitalWrite(LCD_LED, LOW);
+  /////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////
+  Serial.begin(115200);
+  delay(100);
+
+  Serial.println(F("\n\nIniciando..."));
+  delay(100);
+  /////////////////////////////////////////////////
+
+  if (MAX.reset()) {
+    Serial.println(F("MAX35103 Reset OK!"));
+  }
+  else {
+    Serial.println(F("ERRO no Reset do MAX35103"));
+  }
+
+  delay(500);
+  
+  MAX.config();
+
+  printConfigMAX();
 
   delay(500);
 
@@ -306,16 +460,16 @@ void loop() {
       Serial.println(F("Erro ao ler fluxo!"));
     }
 
-    float _temperatura1 = 0.0;
+    /*float _temperatura1 = 0.0;
     if (MAX.temperatura(1, &_temperatura1)) {
       Serial.print(F("Temp1: "));
       Serial.println(_temperatura1, 1);
     }
     else {
       Serial.println(F("Erro ao ler temperatura!"));
-    }
+    }*/
 
-    uint32_t _pressaoAnalog = analogRead(pressaoPin);
+    /*uint32_t _pressaoAnalog = analogRead(pressaoPin);
     uint32_t _pressaoBarInt = map(_pressaoAnalog, 95, 870, 0, 690);
     float _pressaoBar = (float)_pressaoBarInt / 100.0;
 
@@ -327,7 +481,7 @@ void loop() {
 
     if (_pressaoAnalog < 100) {
       Serial.println(F("### Ausencia de agua! ###"));
-    }
+    }*/
   }
 
   delay(10);
