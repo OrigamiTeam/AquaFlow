@@ -6,6 +6,8 @@
 
 #include <avr/pgmspace.h>
 
+#define DEBUG true
+
 // Pino para botao com acesso externo
 #define btnPin 2
 
@@ -64,7 +66,7 @@ MAX35103 MAX;
 valvulaMotorDC valvula;
 displayST7565R LCD;
 
-// ### MAX35103 ###
+// ### INICIO MAX35103 ###
 
 /*uint16_t _dado = readFlash16(0x0000);
   Serial.print("_dado: ");
@@ -102,6 +104,7 @@ displayST7565R LCD;
 
   delay(500);*/
 
+#if DEBUG
 void printConfigMAX() {
   uint16_t _reg = MAX.readRegister16(0xB8);
   Serial.print("TOF1 0xB8: ");
@@ -163,10 +166,11 @@ void printConfigMAX() {
   Serial.print(" | 0x");
   Serial.println(_reg, HEX);
 }
+#endif
 
-// ### MAX35103 ###
+// ### FINAL MAX35103 ###
 
-// ### DISPLAY ###
+// ### INICIO DISPLAY ###
 
 void PGMReadNumeros(unsigned char *_vetor, uint8_t _posicao) {
   for (uint8_t _i = 0; _i < 56; _i++) {
@@ -358,9 +362,15 @@ void pressaoLCD(uint32_t _presaoInt, uint8_t _inicio) {
   LCD.writeSymbol(_char, _inicio + 59, 27); // 27 colunas no display
 }
 
-// ### DISPLAY ###
+// ### FINAL DISPLAY ###
 
 void setup() {
+  #if DEBUG
+  Serial.begin(115200);
+  delay(10);
+  Serial.println(F("\n\nIniciando..."));
+  #endif
+
   pinMode(LCD_LED, OUTPUT);
   digitalWrite(LCD_LED, LOW);
 
@@ -371,14 +381,54 @@ void setup() {
 
   MAX.begin(MAX35103INT, MAX35103RST, MAX35103CE);
 
-  //valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
-  //valvula.abre();
+  delay(10);
+  if (MAX.reset()) {
+    #if DEBUG
+    Serial.println(F("MAX35103 Reset OK!"));
+    #endif
+  }
+  else {
+    #if DEBUG
+    Serial.println(F("ERRO no Reset do MAX35103"));
+    #endif
+  }
+
+  delay(10);
+  MAX.config();
+
+  #if DEBUG
+  printConfigMAX();
+  #endif
+
+  delay(10);
+  if (MAX.toFlash()) {
+    #if DEBUG
+    Serial.println(F("MAX35103 toFlash OK!"));
+    #endif
+  }
+  else {
+    #if DEBUG
+    Serial.println(F("ERRO no toFlash do MAX35103"));
+    #endif
+  }
+  
+  delay(10);
+  if (MAX.initialize()) {
+    #if DEBUG
+    Serial.println(F("Initialize OK!"));
+    #endif
+  }
+  else {
+    #if DEBUG
+    Serial.println(F("ERRO no initialize do MAX35103"));
+    #endif
+  }
 
   LCD.begin(LCD_SI, LCD_SCL, LCD_A0, LCD_RST, LCD_CS);
   delay(10);
   LCD.clear(0, 128);
 
-  /////////////////////////////////////////////////
+  /*////////////////////////////////////////////////
   digitalWrite(LCD_LED, HIGH);
   delay(100);
 
@@ -405,45 +455,19 @@ void setup() {
   }
   
   digitalWrite(LCD_LED, LOW);
-  /////////////////////////////////////////////////
+  */////////////////////////////////////////////////
 
-  /////////////////////////////////////////////////
-  Serial.begin(115200);
-  delay(100);
-
-  Serial.println(F("\n\nIniciando..."));
-  delay(100);
-  /////////////////////////////////////////////////
-
-  if (MAX.reset()) {
-    Serial.println(F("MAX35103 Reset OK!"));
-  }
-  else {
-    Serial.println(F("ERRO no Reset do MAX35103"));
-  }
-
-  delay(500);
+  valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
   
-  MAX.config();
-
-  printConfigMAX();
-
-  delay(500);
-
-  if (MAX.toFlash()) {
-    Serial.println(F("MAX35103 toFlash OK!"));
+  if (valvula.abre()) {
+    #if DEBUG
+    Serial.println(F("Valvula aberta!"));
+    #endif
   }
   else {
-    Serial.println(F("ERRO no toFlash do MAX35103"));
-  }
-  
-  delay(500);
-
-  if (MAX.initialize()) {
-    Serial.println(F("Initialize OK!"));
-  }
-  else {
-    Serial.println(F("ERRO no initialize do MAX35103"));
+    #if DEBUG
+    Serial.println(F("ERRO ao abrir valvula!"));
+    #endif
   }
 }
 
@@ -453,11 +477,15 @@ void loop() {
 
     float _fluxo = 0.0;
     if (MAX.fluxoToFDIff(&_fluxo)) {
+      #if DEBUG
       Serial.print(F("Fluxo: "));
       Serial.println(_fluxo, 2);
+      #endif
     }
     else {
+      #if DEBUG
       Serial.println(F("Erro ao ler fluxo!"));
+      #endif
     }
 
     /*float _temperatura1 = 0.0;
