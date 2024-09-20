@@ -25,10 +25,20 @@ void setup() {
 
   LoRa.setPins(ss, rst, dio0);
   
-  while (!LoRa.begin(868E6)) {
-    Serial.println(".");
+  uint8_t _timeout = 0;
+  while (!LoRa.begin(868E6) && _timeout < 15) {
+    _timeout++;
     delay(1000);
   }
+
+  #if DEBUG
+  if (_timeout >= 15) {
+    Serial.println("Falha ao iniciar modulo LoRa!");
+  }
+  else {
+    Serial.println("Modulo LoRa!");
+  }
+  #endif
 
   LoRa.setTxPower(20);
 

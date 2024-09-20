@@ -13,8 +13,6 @@ void MAX35103::begin(uint8_t intPin, uint8_t rstPin, uint8_t cePin) {
   digitalWrite(_rstPin, HIGH);
   pinMode(_cePin, OUTPUT);
   digitalWrite(_cePin, HIGH);
-
-  SPI.begin();
 }
 
 void MAX35103::writeRegister16(uint8_t _address, uint16_t _value) {

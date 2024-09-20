@@ -31,14 +31,14 @@ boolean valvulaMotorDC::abre() {
   }
   digitalWrite(_motorSleepPin, HIGH);
   delay(10);
-  digitalWrite(_motorIN1Pin, HIGH);
-  digitalWrite(_motorIN2Pin, LOW);
+  digitalWrite(_motorIN1Pin, LOW);
+  digitalWrite(_motorIN2Pin, HIGH);
 
   uint32_t _cont = 0;
   boolean _aguardar = true;
   while(_aguardar) {
     if(_cont > 1500) {
-      digitalWrite(_motorIN1Pin, LOW);
+      digitalWrite(_motorIN2Pin, LOW);
       digitalWrite(_motorSleepPin, LOW);
       return false;
     }
@@ -46,7 +46,7 @@ boolean valvulaMotorDC::abre() {
     if(!digitalRead(_SW1Pin)) {
       delay(20);
       if (!digitalRead(_SW1Pin)) {
-        digitalWrite(_motorIN1Pin, LOW);
+        digitalWrite(_motorIN2Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         _aguardar = false;
       }
@@ -68,14 +68,14 @@ boolean valvulaMotorDC::fecha() {
 
   digitalWrite(_motorSleepPin, HIGH);
   delay(10);
-  digitalWrite(_motorIN1Pin, LOW);
-  digitalWrite(_motorIN2Pin, HIGH);
+  digitalWrite(_motorIN1Pin, HIGH);
+  digitalWrite(_motorIN2Pin, LOW);
 
   uint32_t _cont = 0;
   boolean _aguardar = true;
   while(_aguardar) {
     if(_cont > 1500) {
-      digitalWrite(_motorIN2Pin, LOW);
+      digitalWrite(_motorIN1Pin, LOW);
       digitalWrite(_motorSleepPin, LOW);
       return false;
     }
@@ -83,7 +83,7 @@ boolean valvulaMotorDC::fecha() {
     if(!digitalRead(_SW2Pin)) {
       delay(20);
       if (!digitalRead(_SW2Pin)) {
-        digitalWrite(_motorIN2Pin, LOW);
+        digitalWrite(_motorIN1Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         _aguardar = false;
       }
@@ -103,8 +103,8 @@ boolean valvulaMotorDC::abreParcial(uint32_t _tempoMilis) {
 
   digitalWrite(_motorSleepPin, HIGH);
   delay(10);
-  digitalWrite(_motorIN1Pin, HIGH);
-  digitalWrite(_motorIN2Pin, LOW);
+  digitalWrite(_motorIN1Pin, LOW);
+  digitalWrite(_motorIN2Pin, HIGH);
 
   unsigned long _tempoInicial = millis();
   while (millis() < _tempoInicial + _tempoMilis) {
@@ -112,7 +112,7 @@ boolean valvulaMotorDC::abreParcial(uint32_t _tempoMilis) {
     if(!digitalRead(_SW1Pin)) {
       delay(20);
       if (!digitalRead(_SW1Pin)) {
-        digitalWrite(_motorIN1Pin, LOW);
+        digitalWrite(_motorIN2Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         return false;
       }
@@ -121,7 +121,7 @@ boolean valvulaMotorDC::abreParcial(uint32_t _tempoMilis) {
     delay(10);
   }
   
-  digitalWrite(_motorIN1Pin, LOW);
+  digitalWrite(_motorIN2Pin, LOW);
   digitalWrite(_motorSleepPin, LOW);
   return true;
 }
