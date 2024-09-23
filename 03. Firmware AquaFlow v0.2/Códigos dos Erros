@@ -1,0 +1,10 @@
+0x0000: Inicio do programa
+0x2001: Erro no Reset do MAX35103
+0x2002: Erro no toFlash do MAX35103
+0x2003: Erro no initialize do MAX35103
+0x1004: Falha ao abrir valvula
+0x1005: Falha ao iniciar modulo LoRa
+
+
+
+

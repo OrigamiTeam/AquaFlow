@@ -56,7 +56,8 @@ void callbackMQTT(String &_topic, String &_payload) {
 
 void setupWiFi() {
   WiFi.mode(WIFI_STA);
-  WiFi.begin("QLwifi", "-bMZdXyT6d");
+  //WiFi.begin("QLwifi", "-bMZdXyT6d");
+  WiFi.begin("MEO-0BE960", "2bead7a59c");
 
   if(!SPIFFS.begin(true)) {
     Serial.println("Erro ao montar SPIFFS!");
