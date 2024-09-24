@@ -4,7 +4,11 @@
 0x2003: Erro no initialize do MAX35103
 0x1004: Falha ao abrir valvula
 0x1005: Falha ao iniciar modulo LoRa
-
-
-
+0x1006: Falha ao ler mensagem recebida por LoRa
+0x1007: Pacote LoRa desconhecido!
+0x1008: Comando LoRa desconhecido!
+0x1009: Falha ao fechar valvula
+0x100A: Falha ao abrir valvula
+0x100B: Parametro ausente na mensagem recebida por LoRa
+0x100C: Falha ao realizar abertura parcial da valvula
 

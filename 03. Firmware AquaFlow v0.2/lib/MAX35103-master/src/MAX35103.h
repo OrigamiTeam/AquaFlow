@@ -52,7 +52,7 @@ class MAX35103 {
     uint8_t _rstPin = 0;
     uint8_t _cePin = 0;
 
-    uint16_t _timeout = 2000; // em ms
+    uint16_t _timeout = 5000; // em ms
     
     void writeRegister16(uint8_t _address, uint16_t _value);
     void opcodeCommand(uint8_t _command);

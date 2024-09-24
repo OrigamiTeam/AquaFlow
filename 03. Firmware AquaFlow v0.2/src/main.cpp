@@ -79,7 +79,13 @@ MAX35103 MAX;
 valvulaMotorDC valvula;
 displayST7565R LCD;
 
-JsonDocument avisos;
+JsonDocument avisos; ////////////////// ALTERAR PARA uint16_t avisos[30] registrando apenas o código
+
+void logAviso(uint16_t _codigo) {
+  avisos["o"].add("e"); // Operacao erro
+  avisos["ts"].add(millis()); // timestamp
+  avisos["c"].add(_codigo); // codigo
+}
 
 // ### INICIO MAX35103 ###
 
@@ -122,43 +128,43 @@ JsonDocument avisos;
 #if DEBUG
 void printConfigMAX() {
   uint16_t _reg = MAX.readRegister16(0xB8);
-  Serial.print("TOF1 0xB8: 0x");
+  Serial.print(F("TOF1 0xB8: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xB9);
-  Serial.print("TOF2 0xB9: 0x");
+  Serial.print(F("TOF2 0xB9: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBA);
-  Serial.print("TOF3 0xBA: 0x");
+  Serial.print(F("TOF3 0xBA: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBB);
-  Serial.print("TOF4 0xBB: 0x");
+  Serial.print(F("TOF4 0xBB: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBC);
-  Serial.print("TOF5 0xBC: 0x");
+  Serial.print(F("TOF5 0xBC: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBD);
-  Serial.print("TOF5 0xBD: 0x");
+  Serial.print(F("TOF5 0xBD: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBE);
-  Serial.print("TOF5 0xBE: 0x");
+  Serial.print(F("TOF5 0xBE: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xC0);
-  Serial.print("_reg 0xC0: 0x");
+  Serial.print(F("_reg 0xC0: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xC1);
-  Serial.print("_reg 0xC1: 0x");
+  Serial.print(F("_reg 0xC1: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xC2);
-  Serial.print("_reg 0xC2: 0x");
+  Serial.print(F("_reg 0xC2: 0x"));
   Serial.println(_reg, HEX);
 }
 #endif
@@ -409,13 +415,129 @@ void enviaLora(String _pacote) {
   LoRa.endPacket();
 }
 
-// ### FINAL LORA ###
+void recebeLora() {
+  #if DEBUG
+  Serial.print(F("Recebido LoRa: "));
+  #endif
 
-void logAviso(uint16_t _codigo) {
-  avisos["o"].add("e"); // Operacao erro
-  avisos["ts"].add(millis()); // timestamp
-  avisos["c"].add(_codigo); // codigo
+  String _LoRaData = "";
+  while (LoRa.available()) {
+    _LoRaData.concat(LoRa.readString());
+  }
+
+  #if DEBUG
+  Serial.println(_LoRaData);
+  #endif
+
+  JsonDocument _lora;
+  DeserializationError _erro = deserializeJson(_lora, _LoRaData);
+
+  if (!_erro) {
+    if (!_lora["c"].isNull()) {
+      if (_lora["c"] == 1) {
+        if(valvula.fecha()) {
+
+          _lora.clear();
+          _lora["c"] = 1;
+          _lora["p"] = "ok";
+          String _pacote = "";
+          serializeJson(_lora, _pacote);
+          enviaLora(_pacote);
+
+          #if DEBUG
+          Serial.println(F("Valvula Fechada!"));
+          #endif
+        }
+        else {
+          logAviso(0x1009);
+
+          #if DEBUG
+          Serial.println(F("Falha ao fechar valvula!"));
+          #endif
+        }
+      }
+      else if (_lora["c"] == 2) {
+        if(valvula.abre()) {
+
+          _lora.clear();
+          _lora["c"] = 2;
+          _lora["p"] = "ok";
+          String _pacote = "";
+          serializeJson(_lora, Serial);
+          serializeJson(_lora, _pacote);
+          enviaLora(_pacote);
+
+          #if DEBUG
+          Serial.println(F("Valvula Aberta!"));
+          #endif
+        }
+        else {
+          logAviso(0x100A);
+
+          #if DEBUG
+          Serial.println(F("Falha ao abrir valvula!"));
+          #endif
+        }
+      }
+      else if (_lora["c"] == 3) {
+        if (!_lora["p"].isNull()) {
+          String _tempoString = _lora["p"];
+          if(valvula.abreParcial(_tempoString.toInt())) {
+
+            _lora.clear();
+            _lora["c"] = 3;
+            _lora["p"] = "ok";
+            String _pacote = "";
+            serializeJson(_lora, _pacote);
+            enviaLora(_pacote);
+
+            #if DEBUG
+            Serial.println(F("Valvula com Abertura Parcial!"));
+            #endif
+          }
+          else {
+            logAviso(0x100C);
+
+            #if DEBUG
+            Serial.println(F("Falha ao realizar abertura parcial da valvula!"));
+            #endif
+          }
+        }
+        else {
+          logAviso(0x100B);
+
+          #if DEBUG
+          Serial.println(F("Falha! Tempo de abertura parcial ausente!"));
+          #endif
+        }
+      }
+      else {
+        logAviso(0x1008);
+
+        #if DEBUG
+        Serial.println(F("Falha! Comando LoRa desconhecido!"));
+        #endif
+      }
+    }
+    else {
+      logAviso(0x1007);
+
+      #if DEBUG
+      Serial.println(F("Falha! Pacote LoRa desconhecido!"));
+      #endif
+    }
+  }
+  else {
+    logAviso(0x1006);
+
+    #if DEBUG
+    Serial.print(F("Erro no deserializeJson(): "));
+    Serial.println(_erro.f_str());
+    #endif
+  }
 }
+
+// ### FINAL LORA ###
 
 void displayInfo() {
   uint8_t _size = avisos["o"].size();
@@ -432,33 +554,37 @@ void displayInfo() {
 
       _avisos[_i] = _cod & 0xFFF;
 
-      Serial.print("_erro: ");
+      #if DEBUG
+      Serial.print(F("_erro: "));
       Serial.print(_erro);
-      Serial.print(" | _cod: 0x");
+      Serial.print(F(" | _cod: 0x"));
       Serial.println(_avisos[_i], HEX);
+      #endif
 
-      LCD.clear(0, 128);
-      delay(1);
-      avisoLCD(_avisos[_i], _erro, 15);
+      if(_avisos[_i] != 0x0000) {
+        LCD.clear(0, 128);
+        delay(1);
+        avisoLCD(_avisos[_i], _erro, 15);
 
-      unsigned long _millis = millis();
-      boolean _aguardar = true;
-      while (_aguardar) {
-        if (millis() > _millis + tempoInfoLCD) {
-          LCD.clear(0, 128);
-          delay(1);
-          return;
-        }
-
-        if (!digitalRead(btnPin)) {
-          delay(20);
-          if (!digitalRead(btnPin)) {
-            while (!digitalRead(btnPin));
-            _aguardar = false;
+        unsigned long _millis = millis();
+        boolean _aguardar = true;
+        while (_aguardar) {
+          if (millis() > _millis + tempoInfoLCD) {
+            LCD.clear(0, 128);
+            delay(1);
+            return;
           }
-        }
 
-        delay(10);
+          if (!digitalRead(btnPin)) {
+            delay(20);
+            if (!digitalRead(btnPin)) {
+              while (!digitalRead(btnPin));
+              _aguardar = false;
+            }
+          }
+
+          delay(10);
+        }
       }
     }
   }
@@ -593,6 +719,7 @@ void setup() {
   MAX.config();
 
   #if DEBUG
+  delay(100);
   printConfigMAX();
   #endif
 
@@ -651,12 +778,12 @@ void setup() {
     logAviso(0x1005);
 
     #if DEBUG
-    Serial.println("Falha ao iniciar modulo LoRa!");
+    Serial.println(F("Falha ao iniciar modulo LoRa!"));
     #endif
   }
   #if DEBUG
   else {
-    Serial.println("Modulo LoRa iniciado!");
+    Serial.println(F("Modulo LoRa iniciado!"));
   }
   #endif
 
@@ -668,18 +795,19 @@ void setup() {
   LoRa.setSyncWord(0xAF);
 
   #if DEBUG
-  Serial.println("Setup OK!");
+  Serial.println(F("Setup OK!"));
   #endif
 
-  serializeJsonPretty(avisos, Serial);
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  serializeJson(avisos, Serial);
   Serial.println("");
+  ///////////////////////////////////////////////////////////////////////////////////////////
 }
 
 void loop() {
-  if(millis() > leituraAnterior + 3000) {
-    leituraAnterior = millis();
-
-    float _fluxo = 0.0;
+  if (millis() > leituraAnterior + 3000) {
+    
+    /*float _fluxo = 0.0;
     if (MAX.fluxoToFDIff(&_fluxo)) {
 
       JsonDocument doc;
@@ -706,7 +834,7 @@ void loop() {
       #if DEBUG
       Serial.println(F("Erro ao ler fluxo!"));
       #endif
-    }
+    }*/
 
     /*float _temperatura1 = 0.0;
     if (MAX.temperatura(1, &_temperatura1)) {
@@ -730,46 +858,17 @@ void loop() {
     if (_pressaoAnalog < 100) {
       Serial.println(F("### Ausencia de agua! ###"));
     }*/
+
+    leituraAnterior = millis();
   }
 
-  if(LoRa.parsePacket()) {
-    #if DEBUG
-    Serial.print("Received packet: ");
-    #endif
-
-    String _LoRaData = "";
-    while (LoRa.available()) {
-      _LoRaData.concat(LoRa.readString());
-    }
-
-    #if DEBUG
-    Serial.print(_LoRaData); 
-    Serial.print(" | RSSI: ");
-    Serial.println(LoRa.packetRssi());
-    #endif
-
-    if(!_LoRaData.compareTo("v: abre")) {
-      if(valvula.abre()) {
-        enviaLora("Aberto!");
-      }
-      else {
-        enviaLora("Erro ao abrir!");
-      }
-    }
-
-    if(!_LoRaData.compareTo("v: fecha")) {
-      if(valvula.fecha()) {
-        enviaLora("Fechado!");
-      }
-      else {
-        enviaLora("Erro ao fechar!");
-      }
-    }
+  if (LoRa.parsePacket()) {
+    recebeLora();
   }
 
-  if(!digitalRead(btnPin)) {
+  if (!digitalRead(btnPin)) {
     delay(20);
-    if(!digitalRead(btnPin)) {
+    if (!digitalRead(btnPin)) {
       while (!digitalRead(btnPin));
       displayInfo();
     }

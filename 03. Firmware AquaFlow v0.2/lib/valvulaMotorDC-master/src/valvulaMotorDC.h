@@ -9,7 +9,7 @@ class valvulaMotorDC {
     void begin(uint8_t SW1, uint8_t SW2, uint8_t sleep, uint8_t IN1, uint8_t IN2);  
     boolean abre();
     boolean fecha();
-    boolean abreParcial(uint32_t _tempoMilis);
+    boolean abreParcial(unsigned long _tempoMilis);
 
     private:
     uint8_t _SW1Pin = 0;

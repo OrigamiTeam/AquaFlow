@@ -95,11 +95,11 @@ boolean valvulaMotorDC::fecha() {
   return true;
 }
 
-boolean valvulaMotorDC::abreParcial(uint32_t _tempoMilis) {
+boolean valvulaMotorDC::abreParcial(unsigned long _tempoMilis) {
   if (!fecha()) {
     return false;
   }
-  delay(250);
+  delay(1000);
 
   digitalWrite(_motorSleepPin, HIGH);
   delay(10);
