@@ -1,14 +1,13 @@
-0x0000: Inicio do programa
-0x2001: Erro no Reset do MAX35103
-0x2002: Erro no toFlash do MAX35103
-0x2003: Erro no initialize do MAX35103
-0x1004: Falha ao abrir valvula
-0x1005: Falha ao iniciar modulo LoRa
-0x1006: Falha ao ler mensagem recebida por LoRa
-0x1007: Pacote LoRa desconhecido!
-0x1008: Comando LoRa desconhecido!
-0x1009: Falha ao fechar valvula
-0x100A: Falha ao abrir valvula
-0x100B: Parametro ausente na mensagem recebida por LoRa
-0x100C: Falha ao realizar abertura parcial da valvula
+0x1001: Inicio do programa
+0x3002: Erro no Reset do MAX35103
+0x3003: Erro no toFlash do MAX35103
+0x2004: Erro no initialize do MAX35103
+0x2005: Falha ao iniciar modulo LoRa
+0x2006: Falha ao ler mensagem recebida por LoRa
+0x2007: Falha: Pacote LoRa desconhecido!
+0x2008: Falha: Comando LoRa desconhecido!
+0x2009: Falha ao fechar valvula
+0x200A: Falha ao abrir valvula
+0x200B: Falha: Parametro ausente na mensagem recebida por LoRa
+0x200C: Falha ao realizar abertura parcial da valvula
 

@@ -51,6 +51,7 @@ void callbackMQTT(String &_topic, String &_payload) {
   #endif
   if (!_topic.compareTo(IOT_TOPIC_SUB)) {
     enviaLora(_payload);
+    Serial.println("Enviado LoRa!");
   }
 }
 

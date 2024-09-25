@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
-#include <ArduinoJson.h>
+//#include <ArduinoJson.h>
 #include <avr/pgmspace.h>
 
 #include "MAX35103.h"
@@ -51,6 +51,9 @@
 
 #define tempoInfoLCD 10000
 
+#define qtdAvisos 30
+#define avisoInicio 0x1001
+
 const unsigned char numeros [10][56] PROGMEM = {
   {0xF8, 0xF8, 0xF8, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0x38, 0xF8, 0xF8, 0xF8, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x0F, 0x0F, 0x0F, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0F, 0x0F, 0x0F},
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF8, 0xF8, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x0F},
@@ -79,12 +82,21 @@ MAX35103 MAX;
 valvulaMotorDC valvula;
 displayST7565R LCD;
 
-JsonDocument avisos; ////////////////// ALTERAR PARA uint16_t avisos[30] registrando apenas o código
+uint16_t avisos[qtdAvisos];
 
 void logAviso(uint16_t _codigo) {
-  avisos["o"].add("e"); // Operacao erro
-  avisos["ts"].add(millis()); // timestamp
-  avisos["c"].add(_codigo); // codigo
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    if (avisos[_i] == 0) {
+      avisos[_i] = _codigo;
+      return;
+    }
+  }
+
+  for (uint8_t _i = 0; _i < (qtdAvisos - 1); _i++) {
+    avisos[_i] = avisos[_i + 1];
+  }
+
+  avisos[qtdAvisos - 1] = _codigo;
 }
 
 // ### INICIO MAX35103 ###
@@ -429,27 +441,32 @@ void recebeLora() {
   Serial.println(_LoRaData);
   #endif
 
-  JsonDocument _lora;
-  DeserializationError _erro = deserializeJson(_lora, _LoRaData);
+  uint8_t _tamanho = _LoRaData.length() + 1;
+  char _data[_tamanho];
+  _LoRaData.toCharArray(_data, _tamanho);
 
-  if (!_erro) {
-    if (!_lora["c"].isNull()) {
-      if (_lora["c"] == 1) {
+  if (_data[0] == '{' && _data[_tamanho - 2] == '}') {
+    
+    uint8_t _comando = 0;
+    for (uint8_t _i = 1; _i < _tamanho - 2; _i++) {
+      if (_data[_i] == 'c') {
+        _comando = _i;
+        _i = _tamanho - 2;
+      }
+    }
+    
+    if (_comando) {
+      /*if (_lora["c"] == 1) {
         if(valvula.fecha()) {
 
-          _lora.clear();
-          _lora["c"] = 1;
-          _lora["p"] = "ok";
-          String _pacote = "";
-          serializeJson(_lora, _pacote);
-          enviaLora(_pacote);
+          enviaLora("{c:1,p:\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Fechada!"));
           #endif
         }
         else {
-          logAviso(0x1009);
+          logAviso(0x2009);
 
           #if DEBUG
           Serial.println(F("Falha ao fechar valvula!"));
@@ -459,20 +476,14 @@ void recebeLora() {
       else if (_lora["c"] == 2) {
         if(valvula.abre()) {
 
-          _lora.clear();
-          _lora["c"] = 2;
-          _lora["p"] = "ok";
-          String _pacote = "";
-          serializeJson(_lora, Serial);
-          serializeJson(_lora, _pacote);
-          enviaLora(_pacote);
+          enviaLora("{c:2,p:\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Aberta!"));
           #endif
         }
         else {
-          logAviso(0x100A);
+          logAviso(0x200A);
 
           #if DEBUG
           Serial.println(F("Falha ao abrir valvula!"));
@@ -484,19 +495,14 @@ void recebeLora() {
           String _tempoString = _lora["p"];
           if(valvula.abreParcial(_tempoString.toInt())) {
 
-            _lora.clear();
-            _lora["c"] = 3;
-            _lora["p"] = "ok";
-            String _pacote = "";
-            serializeJson(_lora, _pacote);
-            enviaLora(_pacote);
+            enviaLora("{c:3,p:\"ok\"}");
 
             #if DEBUG
             Serial.println(F("Valvula com Abertura Parcial!"));
             #endif
           }
           else {
-            logAviso(0x100C);
+            logAviso(0x200C);
 
             #if DEBUG
             Serial.println(F("Falha ao realizar abertura parcial da valvula!"));
@@ -504,7 +510,7 @@ void recebeLora() {
           }
         }
         else {
-          logAviso(0x100B);
+          logAviso(0x200B);
 
           #if DEBUG
           Serial.println(F("Falha! Tempo de abertura parcial ausente!"));
@@ -512,15 +518,15 @@ void recebeLora() {
         }
       }
       else {
-        logAviso(0x1008);
+        logAviso(0x2008);
 
         #if DEBUG
         Serial.println(F("Falha! Comando LoRa desconhecido!"));
         #endif
-      }
+      }*/
     }
     else {
-      logAviso(0x1007);
+      logAviso(0x2007);
 
       #if DEBUG
       Serial.println(F("Falha! Pacote LoRa desconhecido!"));
@@ -528,43 +534,71 @@ void recebeLora() {
     }
   }
   else {
-    logAviso(0x1006);
+    logAviso(0x2006);
 
     #if DEBUG
-    Serial.print(F("Erro no deserializeJson(): "));
-    Serial.println(_erro.f_str());
+    Serial.println(F("Erro no pacote LoRa recebido!"));
     #endif
+  }
+}
+
+void enviaAvisosLoRa() {
+  uint8_t _size = 0;
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    if (avisos[_i] != 0) {
+      _size = _i + 1;
+    }
+    else {
+      _i = qtdAvisos;
+    }
+  }
+
+  if (_size) {
+    String _lora = "{o:\"i\",t:[";
+
+    for (uint8_t _i = 0; _i < _size; _i++) {
+      _lora.concat(avisos[_i]);
+      if (_i < _size - 1) {
+        _lora.concat(",");
+      }
+    }
+    _lora.concat("]}");
+    enviaLora(_lora);
   }
 }
 
 // ### FINAL LORA ###
 
 void displayInfo() {
-  uint8_t _size = avisos["o"].size();
-  uint16_t _avisos[_size];
+  uint8_t _size = 0;
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    if (avisos[_i] != 0) {
+      _size = _i + 1;
+    }
+    else {
+      _i = qtdAvisos;
+    }
+  }
+
   if (_size) {
     for (uint8_t _i = 0; _i < _size; _i++) {
-      uint16_t _cod = avisos["c"][_i];
-
       boolean _erro = false;
-      uint8_t _tipo = _cod >> 12;
+      uint8_t _tipo = avisos[_i] >> 12;
       if (_tipo >= 0x2) {
         _erro = true;
       }
-
-      _avisos[_i] = _cod & 0xFFF;
 
       #if DEBUG
       Serial.print(F("_erro: "));
       Serial.print(_erro);
       Serial.print(F(" | _cod: 0x"));
-      Serial.println(_avisos[_i], HEX);
+      Serial.println(avisos[_i] & 0xFFF, HEX);
       #endif
 
-      if(_avisos[_i] != 0x0000) {
+      if(avisos[_i] != avisoInicio) {
         LCD.clear(0, 128);
         delay(1);
-        avisoLCD(_avisos[_i], _erro, 15);
+        avisoLCD(avisos[_i] & 0xFFF, _erro, 15);
 
         unsigned long _millis = millis();
         boolean _aguardar = true;
@@ -694,7 +728,11 @@ void setup() {
 
   pinMode(pressaoPin, INPUT);
 
-  logAviso(0x0000); // Inicio do programa
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    avisos[_i] = 0;
+  }
+
+  logAviso(avisoInicio); // Inicio do programa
 
   SPI.begin();
 
@@ -703,7 +741,7 @@ void setup() {
 
   delay(100);
   if (!MAX.reset()) {
-    logAviso(0x2001);
+    logAviso(0x3002);
     
     #if DEBUG
     Serial.println(F("ERRO no Reset do MAX35103"));
@@ -725,7 +763,7 @@ void setup() {
 
   delay(100);
   if (!MAX.toFlash()) {
-    logAviso(0x2002);
+    logAviso(0x3003);
 
     #if DEBUG
     Serial.println(F("ERRO no toFlash do MAX35103"));
@@ -739,7 +777,7 @@ void setup() {
   
   delay(100);
   if (!MAX.initialize()) {
-    logAviso(0x2003);
+    logAviso(0x3004);
 
     #if DEBUG
     Serial.println(F("ERRO no initialize do MAX35103"));
@@ -754,7 +792,7 @@ void setup() {
   valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
   
   if (!valvula.abre()) {
-    logAviso(0x1004);
+    logAviso(0x200A);
     
     #if DEBUG
     Serial.println(F("Falha ao abrir valvula!"));
@@ -775,7 +813,7 @@ void setup() {
   }
 
   if (_timeout >= 5) {
-    logAviso(0x1005);
+    logAviso(0x2005);
 
     #if DEBUG
     Serial.println(F("Falha ao iniciar modulo LoRa!"));
@@ -799,7 +837,12 @@ void setup() {
   #endif
 
   ///////////////////////////////////////////////////////////////////////////////////////////
-  serializeJson(avisos, Serial);
+  Serial.print("avisos: ");
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    Serial.print("0x");
+    Serial.print(avisos[_i], HEX);
+    Serial.print(" ");
+  }
   Serial.println("");
   ///////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -871,6 +914,8 @@ void loop() {
     if (!digitalRead(btnPin)) {
       while (!digitalRead(btnPin));
       displayInfo();
+
+      enviaAvisosLoRa();
     }
   }
 
