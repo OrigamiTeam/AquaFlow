@@ -974,6 +974,7 @@ void loop() {
 
   if (millis() > envioAnteriorAvisos + 30000) {
     enviaAvisosLoRa();
+    
     limpaAvisos();
     envioAnteriorAvisos = millis();
   }
