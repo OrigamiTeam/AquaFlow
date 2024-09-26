@@ -9,5 +9,6 @@
 0x2009: Falha ao fechar valvula
 0x200A: Falha ao abrir valvula
 0x200B: Falha: Parametro ausente na mensagem recebida por LoRa
-0x200C: Falha ao realizar abertura parcial da valvula
+0x200C: Falha! Tempo de abertura parcial incorreto ou nulo
+0x200D: Falha ao realizar abertura parcial da valvula
 

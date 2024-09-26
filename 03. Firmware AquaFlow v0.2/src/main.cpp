@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
-//#include <ArduinoJson.h>
+
 #include <avr/pgmspace.h>
 
 #include "MAX35103.h"
@@ -76,13 +76,15 @@ const unsigned char simboloBar [108] PROGMEM = {0x00, 0x00, 0x00, 0x00, 0x00, 0x
 const unsigned char simboloAviso [2][100] PROGMEM = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xE0, 0x70, 0x18, 0x18, 0x18, 0x70, 0xE0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xE0, 0x78, 0x1E, 0x07, 0x01, 0x00, 0xFC, 0xFC, 0xFC, 0x00, 0x01, 0x07, 0x1E, 0x78, 0xE0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x80, 0xE0, 0x78, 0x1E, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE7, 0xE7, 0xE7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0x1E, 0x78, 0xE0, 0x80, 0x03, 0x07, 0x0E, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0E, 0x07, 0x03},
                                                      {0x00, 0x00, 0x00, 0x80, 0xC0, 0xE0, 0xE0, 0xF0, 0xF0, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF0, 0xF0, 0xE0, 0xE0, 0xC0, 0x80, 0x00, 0x00, 0x00, 0xF0, 0xFC, 0xFF, 0xFF, 0xFF, 0xFF, 0xF9, 0xF1, 0xE3, 0xC7, 0x8F, 0x1F, 0x3F, 0x1F, 0x8F, 0xC7, 0xE3, 0xF1, 0xF9, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0xF0, 0x07, 0x1F, 0x7F, 0xFF, 0xFF, 0xFF, 0xCF, 0xC7, 0xE3, 0xF1, 0xF8, 0xFC, 0xFE, 0xFC, 0xF8, 0xF1, 0xE3, 0xC7, 0xCF, 0xFF, 0xFF, 0xFF, 0x7F, 0x1F, 0x07, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x03, 0x07, 0x07, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x07, 0x07, 0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00}};
 
-unsigned long leituraAnterior = 0;
-
 MAX35103 MAX;
 valvulaMotorDC valvula;
 displayST7565R LCD;
 
 uint16_t avisos[qtdAvisos];
+
+unsigned long leituraAnterior = 0;
+
+unsigned long envioAnteriorAvisos = 0;
 
 void logAviso(uint16_t _codigo) {
   for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
@@ -427,6 +429,51 @@ void enviaLora(String _pacote) {
   LoRa.endPacket();
 }
 
+boolean verificaPacoteLoRa(String _pacote) {
+  uint8_t _tamanho = _pacote.length() + 1;
+  char _data[_tamanho];
+  _pacote.toCharArray(_data, _tamanho);
+
+  if (_data[0] == '{' && _data[_tamanho - 2] == '}') {
+    return true;
+  }
+  return false;
+}
+
+long leValorInt(String _pacote, uint8_t _indiceComando) {
+  uint8_t _tamanho = _pacote.length() + 1;
+  char _data[_tamanho];
+  _pacote.toCharArray(_data, _tamanho);
+
+  uint8_t _indiceSeparador = 0;
+  for (uint8_t _i = _indiceComando + 1; _i < _tamanho - 2; _i++) {
+    if (_data[_i] == ':') {
+      _indiceSeparador = _i;
+      break;
+    }
+  }
+
+  uint8_t _indiceValor = 0;
+  for (uint8_t _i = _indiceSeparador + 1; _i < _tamanho - 2; _i++) {
+    if (_data[_i] - '0' >= 0 && _data[_i] - '0' <= 9) {
+      _indiceValor = _i;
+      break;
+    }
+  }
+
+  String _valorString = "";
+  for (uint8_t _i = _indiceValor; _i < _tamanho - 2; _i++) {
+    if (_data[_i] - '0' >= 0 && _data[_i] - '0' <= 9) {
+      _valorString.concat(_data[_i] - '0');
+    }
+    else {
+      break;
+    }
+  }
+
+  return _valorString.toInt();
+}
+
 void recebeLora() {
   #if DEBUG
   Serial.print(F("Recebido LoRa: "));
@@ -441,22 +488,13 @@ void recebeLora() {
   Serial.println(_LoRaData);
   #endif
 
-  uint8_t _tamanho = _LoRaData.length() + 1;
-  char _data[_tamanho];
-  _LoRaData.toCharArray(_data, _tamanho);
+  if (verificaPacoteLoRa(_LoRaData)) {
+    
+    int _indiceComando = _LoRaData.indexOf("c:");
+    if (_indiceComando != -1) {
 
-  if (_data[0] == '{' && _data[_tamanho - 2] == '}') {
-    
-    uint8_t _comando = 0;
-    for (uint8_t _i = 1; _i < _tamanho - 2; _i++) {
-      if (_data[_i] == 'c') {
-        _comando = _i;
-        _i = _tamanho - 2;
-      }
-    }
-    
-    if (_comando) {
-      /*if (_lora["c"] == 1) {
+      uint8_t _valorInt = leValorInt(_LoRaData, _indiceComando);
+      if (_valorInt == 1) {
         if(valvula.fecha()) {
 
           enviaLora("{c:1,p:\"ok\"}");
@@ -473,7 +511,7 @@ void recebeLora() {
           #endif
         }
       }
-      else if (_lora["c"] == 2) {
+      else if (_valorInt == 2) {
         if(valvula.abre()) {
 
           enviaLora("{c:2,p:\"ok\"}");
@@ -490,22 +528,35 @@ void recebeLora() {
           #endif
         }
       }
-      else if (_lora["c"] == 3) {
-        if (!_lora["p"].isNull()) {
-          String _tempoString = _lora["p"];
-          if(valvula.abreParcial(_tempoString.toInt())) {
+      else if (_valorInt == 3) {
 
-            enviaLora("{c:3,p:\"ok\"}");
+        int _indiceComandoP = _LoRaData.indexOf("p:");
+        if (_indiceComandoP != -1) {
 
-            #if DEBUG
-            Serial.println(F("Valvula com Abertura Parcial!"));
-            #endif
+          uint32_t _valorIntP = leValorInt(_LoRaData, _indiceComandoP);
+          if (_valorIntP) {
+
+            if(valvula.abreParcial(_valorIntP)) {
+
+              enviaLora("{c:3,p:\"ok\"}");
+
+              #if DEBUG
+              Serial.println(F("Valvula com Abertura Parcial!"));
+              #endif
+            }
+            else {
+              logAviso(0x200D);
+
+              #if DEBUG
+              Serial.println(F("Falha ao realizar abertura parcial da valvula!"));
+              #endif
+            }
           }
           else {
             logAviso(0x200C);
 
             #if DEBUG
-            Serial.println(F("Falha ao realizar abertura parcial da valvula!"));
+            Serial.println(F("Falha! Tempo de abertura parcial incorreto ou nulo!"));
             #endif
           }
         }
@@ -523,7 +574,7 @@ void recebeLora() {
         #if DEBUG
         Serial.println(F("Falha! Comando LoRa desconhecido!"));
         #endif
-      }*/
+      }
     }
     else {
       logAviso(0x2007);
@@ -564,6 +615,12 @@ void enviaAvisosLoRa() {
     }
     _lora.concat("]}");
     enviaLora(_lora);
+  }
+}
+
+void limpaAvisos() {
+  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
+    avisos[_i] = 0;
   }
 }
 
@@ -728,9 +785,7 @@ void setup() {
 
   pinMode(pressaoPin, INPUT);
 
-  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
-    avisos[_i] = 0;
-  }
+  limpaAvisos();
 
   logAviso(avisoInicio); // Inicio do programa
 
@@ -914,9 +969,13 @@ void loop() {
     if (!digitalRead(btnPin)) {
       while (!digitalRead(btnPin));
       displayInfo();
-
-      enviaAvisosLoRa();
     }
+  }
+
+  if (millis() > envioAnteriorAvisos + 30000) {
+    enviaAvisosLoRa();
+    limpaAvisos();
+    envioAnteriorAvisos = millis();
   }
 
   delay(10);
