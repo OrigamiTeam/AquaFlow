@@ -84,9 +84,11 @@ uint16_t avisos[qtdAvisos];
 
 unsigned long leituraAnterior = 0;
 
-unsigned long envioAnteriorAvisos = 0;
+boolean novoAviso = false;
 
 void logAviso(uint16_t _codigo) {
+  novoAviso = true;
+
   for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
     if (avisos[_i] == 0) {
       avisos[_i] = _codigo;
@@ -608,14 +610,26 @@ void enviaAvisosLoRa() {
     String _lora = "{o:\"i\",t:[";
 
     for (uint8_t _i = 0; _i < _size; _i++) {
-      _lora.concat(avisos[_i]);
+      _lora.concat("0x");
+      String _codigo = String(avisos[_i], HEX);
+      _codigo.toUpperCase();
+      _lora.concat(_codigo);
       if (_i < _size - 1) {
-        _lora.concat(",");
+        _lora.concat(", ");
       }
     }
     _lora.concat("]}");
     enviaLora(_lora);
+    
+    #if DEBUG
+    Serial.println(F("OK!"));
+    #endif
   }
+  #if DEBUG
+  else {
+    Serial.println(F("Sem Avisos"));
+  }
+  #endif
 }
 
 void limpaAvisos() {
@@ -892,11 +906,13 @@ void setup() {
   #endif
 
   ///////////////////////////////////////////////////////////////////////////////////////////
-  Serial.print("avisos: ");
+  Serial.print("Avisos: ");
   for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
-    Serial.print("0x");
-    Serial.print(avisos[_i], HEX);
-    Serial.print(" ");
+    if (avisos[_i]) {
+      Serial.print("0x");
+      Serial.print(avisos[_i], HEX);
+      Serial.print(" ");
+    }
   }
   Serial.println("");
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -972,11 +988,14 @@ void loop() {
     }
   }
 
-  if (millis() > envioAnteriorAvisos + 30000) {
-    enviaAvisosLoRa();
+  if (novoAviso) {
+    #if DEBUG
+    Serial.print(F("Enviando avisos: "));
+    #endif
     
+    enviaAvisosLoRa();
     limpaAvisos();
-    envioAnteriorAvisos = millis();
+    novoAviso = false;
   }
 
   delay(10);
