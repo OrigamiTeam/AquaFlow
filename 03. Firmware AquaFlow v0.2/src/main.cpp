@@ -753,9 +753,11 @@ void setup() {
   LCD.clear(0, 128);
 
   pinMode(LCD_LED, OUTPUT);
+  digitalWrite(LCD_LED, HIGH);
+  delay(100);
   digitalWrite(LCD_LED, LOW);
 
-  /*////////////////////////////////////////////////
+  /*// TESTE DISPLAY LCD
   //digitalWrite(LCD_LED, HIGH);
   //delay(100);
 
@@ -792,7 +794,7 @@ void setup() {
   }
   
   digitalWrite(LCD_LED, LOW);
-  */////////////////////////////////////////////////
+  */// TESTE DISPLAY
 
   pinMode(btnPin, INPUT);
   //digitalWrite(btnPin, HIGH); // Pullup externo
@@ -858,6 +860,11 @@ void setup() {
   }
   #endif
 
+  digitalWrite(LCD_LED, HIGH);
+  delay(100);
+  digitalWrite(LCD_LED, LOW);
+  delay(100);
+
   valvula.begin(SW1Pin, SW2Pin, motorSleepPin, motorIN1Pin, motorIN2Pin);
   
   if (!valvula.abre()) {
@@ -872,6 +879,11 @@ void setup() {
     Serial.println(F("Valvula aberta!"));
   }
   #endif
+
+  digitalWrite(LCD_LED, HIGH);
+  delay(100);
+  digitalWrite(LCD_LED, LOW);
+  delay(100);
 
   LoRa.setPins(LoRaSS, LoRaRST, LoRaDIO0);
 
@@ -906,6 +918,7 @@ void setup() {
   #endif
 
   ///////////////////////////////////////////////////////////////////////////////////////////
+  #if DEBUG
   Serial.print("Avisos: ");
   for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
     if (avisos[_i]) {
@@ -915,40 +928,41 @@ void setup() {
     }
   }
   Serial.println("");
+  #endif
   ///////////////////////////////////////////////////////////////////////////////////////////
+
+  digitalWrite(LCD_LED, HIGH);
+  delay(100);
+  digitalWrite(LCD_LED, LOW);
 }
 
 void loop() {
-  if (millis() > leituraAnterior + 3000) {
+  if (millis() > leituraAnterior + 1000) {
     
-    /*float _fluxo = 0.0;
+    float _fluxo = 0.0;
     if (MAX.fluxoToFDIff(&_fluxo)) {
 
-      JsonDocument doc;
+      float _fluxoLH = _fluxo * 60.0;
 
-      // Add values in the document
-      doc["f"] = _fluxo;
-
-      //JsonArray data = doc["data"].to<JsonArray>();
-      //data.add(48.756080);
-      //data.add(2.302038);
-
-      char output[255];
-      serializeJson(doc, output);
-
-      enviaLora(String(output));
+      String _pacote = "{o: \"t\", f: [";
+      _pacote.concat(String(_fluxoLH, 2));
+      _pacote.concat("]}");
+      enviaLora(_pacote);
 
       #if DEBUG
-      Serial.println(String(output));
+      Serial.print("\n_fluxo: ");
+      Serial.println(_fluxo);
+      Serial.print("_fluxoLH: ");
+      Serial.println(_fluxoLH);
       #endif
     }
     else {
-      enviaLora("f: ERRO");
+      enviaLora("{o: \"t\",f: [00.00]}");
 
       #if DEBUG
       Serial.println(F("Erro ao ler fluxo!"));
       #endif
-    }*/
+    }
 
     /*float _temperatura1 = 0.0;
     if (MAX.temperatura(1, &_temperatura1)) {

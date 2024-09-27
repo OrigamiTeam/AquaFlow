@@ -35,27 +35,27 @@ void MAX35103::writeRegister16(uint8_t _address, uint16_t _value) {
 
 void MAX35103::config() {
   writeRegister16(MAX35103_TOF1_W, 0x1311);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF2_W, 0xA4F2);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF3_W, 0x0A0B);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF4_W, 0x0C0D);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF5_W, 0x0E0F);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF6_W, 0x0048);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_TOF7_W, 0x0048);
-  delay(10);
+  delay(100);
 
   writeRegister16(MAX35103_EVT_TMN_W, 0x006B);
-  delay(10);
+  delay(100);
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
-  delay(10);
+  delay(100);
   writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
-  delay(10);
+  delay(100);
 }
 
 uint16_t MAX35103::readRegister16(uint8_t _address) {
@@ -274,7 +274,8 @@ float MAX35103::ToF_Diff(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
 
 float MAX35103::fluxoAgua(float _deltaToF) {
   float _velocidadeAux = _deltaToF * 2.202256; // 2.202256 em mm²/us²
-  float _velocidade = _velocidadeAux / 124.0; // em mm/10⁶ns = mm/ms
+  //float _velocidade = _velocidadeAux / 124.0; // em mm/10⁶ns = mm/ms
+  float _velocidade = _velocidadeAux / 110.0; // em mm/10⁶ns = mm/ms
 
   /*Serial.print("_deltaToF: ");
   Serial.println(_deltaToF, 6);
