@@ -21,6 +21,13 @@
 #define MAX35103_LDO_ON 0x0C
 #define MAX35103_LDO_OFF 0x0D
 
+#define MAX35103_RTC_SEC_W 0x30 // R: 0xB0
+#define MAX35103_RTC_HRMIN_W 0x31 // R: 0xB1
+#define MAX35103_RTC_D_W 0x32 // R: 0xB2
+#define MAX35103_RTC_MY_W 0x33 // R: 0xB3
+#define MAX35103_WDT_W 0x34 // R: 0xB4
+#define MAX35103_ALARM_W 0x35 // R: 0xB5
+
 #define MAX35103_TOF1_W 0x38 // R: 0xB8
 #define MAX35103_TOF2_W 0x39 // R: 0xB9
 #define MAX35103_TOF3_W 0x3A // R: 0xBA
@@ -28,7 +35,8 @@
 #define MAX35103_TOF5_W 0x3C // R: 0xBC
 #define MAX35103_TOF6_W 0x3D // R: 0xBD
 #define MAX35103_TOF7_W 0x3E // R: 0xBE
-#define MAX35103_EVT_TMN_W 0x40 // R: 0xC0
+#define MAX35103_EVT_TMN1_W 0x3F // R: 0xBF
+#define MAX35103_EVT_TMN2_W 0x40 // R: 0xC0
 #define MAX35103_TOF_MES_W 0x41 // R: 0xC1
 #define MAX35103_CLB_CTR_W 0x42 // R: 0xC2
 

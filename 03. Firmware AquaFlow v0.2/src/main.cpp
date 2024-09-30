@@ -809,6 +809,7 @@ void setup() {
 
   delay(100);
   MAX.begin(MAX35103INT, MAX35103RST, MAX35103CE);
+  //MAX.begin(I2C_SDA_EXT, I2C_SCL_EXT, SPI_SS_EXT);
 
   delay(100);
   if (!MAX.reset()) {
@@ -885,7 +886,7 @@ void setup() {
   digitalWrite(LCD_LED, LOW);
   delay(100);
 
-  LoRa.setPins(LoRaSS, LoRaRST, LoRaDIO0);
+  /*LoRa.setPins(LoRaSS, LoRaRST, LoRaDIO0);
 
   uint8_t _timeout = 0;
   while (!LoRa.begin(868E6) && _timeout < 5) {
@@ -911,7 +912,7 @@ void setup() {
   // Change sync word (0xAF) to match the receiver
   // The sync word assures you don't get LoRa messages from other LoRa transceivers
   // ranges from 0-0xFF
-  LoRa.setSyncWord(0xAF);
+  LoRa.setSyncWord(0xAF);*/
 
   #if DEBUG
   Serial.println(F("Setup OK!"));
@@ -944,10 +945,10 @@ void loop() {
 
       float _fluxoLH = _fluxo * 60.0;
 
-      String _pacote = "{o: \"t\", f: [";
+      /*String _pacote = "{o: \"t\", f: [";
       _pacote.concat(String(_fluxoLH, 2));
       _pacote.concat("]}");
-      enviaLora(_pacote);
+      enviaLora(_pacote);*/
 
       #if DEBUG
       Serial.print("\n_fluxo: ");
@@ -957,7 +958,7 @@ void loop() {
       #endif
     }
     else {
-      enviaLora("{o: \"t\",f: [00.00]}");
+      //enviaLora("{o: \"t\",f: [00.00]}");
 
       #if DEBUG
       Serial.println(F("Erro ao ler fluxo!"));
@@ -990,7 +991,7 @@ void loop() {
     leituraAnterior = millis();
   }
 
-  if (LoRa.parsePacket()) {
+  /*if (LoRa.parsePacket()) {
     recebeLora();
   }
 
@@ -1010,7 +1011,7 @@ void loop() {
     enviaAvisosLoRa();
     limpaAvisos();
     novoAviso = false;
-  }
+  }*/
 
   delay(10);
 }

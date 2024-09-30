@@ -34,6 +34,24 @@ void MAX35103::writeRegister16(uint8_t _address, uint16_t _value) {
 }
 
 void MAX35103::config() {
+  writeRegister16(MAX35103_RTC_SEC_W, 0x000);
+  delay(100);
+  writeRegister16(MAX35103_RTC_HRMIN_W, 0x0000);
+  delay(100);
+  writeRegister16(MAX35103_RTC_D_W, 0x0000);
+  delay(100);
+  writeRegister16(MAX35103_RTC_MY_W, 0x0000);
+  delay(100);
+  writeRegister16(MAX35103_WDT_W, 0x0000);
+  delay(100);
+  writeRegister16(MAX35103_ALARM_W, 0x0000);
+  delay(100);
+
+  writeRegister16(0x36, 0x0000);
+  delay(100);
+  writeRegister16(0x37, 0x0000);
+  delay(100);
+
   writeRegister16(MAX35103_TOF1_W, 0x1311);
   delay(100);
   writeRegister16(MAX35103_TOF2_W, 0xA4F2);
@@ -49,12 +67,17 @@ void MAX35103::config() {
   writeRegister16(MAX35103_TOF7_W, 0x0048);
   delay(100);
 
-  writeRegister16(MAX35103_EVT_TMN_W, 0x006B);
+  writeRegister16(MAX35103_EVT_TMN1_W, 0x0000);
+  delay(100);
+  writeRegister16(MAX35103_EVT_TMN2_W, 0x006B);
   delay(100);
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
   delay(100);
   writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
+  delay(100);
+
+  writeRegister16(0x43, 0x0080);
   delay(100);
 }
 
