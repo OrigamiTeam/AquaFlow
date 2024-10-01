@@ -420,9 +420,17 @@ boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
     uint16_t _TxFrac = readRegister16(0xE8);
     float _timeT1 = registerTemp(_TxInt, _TxFrac);
 
+    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+      return false;
+    }
+
     _TxInt = readRegister16(0xEB);
     _TxFrac = readRegister16(0xEC);
     float _timeT3 = registerTemp(_TxInt, _TxFrac);
+
+    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+      return false;
+    }
 
     float _temp = temperaturaPT1000(_timeT1, _timeT3);
 

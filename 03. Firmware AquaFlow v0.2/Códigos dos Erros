@@ -11,4 +11,5 @@
 0x200B: Falha: Parametro ausente na mensagem recebida por LoRa
 0x200C: Falha! Tempo de abertura parcial incorreto ou nulo
 0x200D: Falha ao realizar abertura parcial da valvula
-
+0x200E: Ausencia de agua!
+0x100F: Presao da agua normalizada!

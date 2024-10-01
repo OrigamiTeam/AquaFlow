@@ -8,7 +8,7 @@
 #include "valvulaMotorDC.h"
 #include "displayST7565R.h"
 
-#define DEBUG true
+#define DEBUG false
 
 // Pino para botao com acesso externo
 #define btnPin 2
@@ -83,8 +83,18 @@ displayST7565R LCD;
 uint16_t avisos[qtdAvisos];
 
 unsigned long leituraAnterior = 0;
+unsigned long leituraAnteriorAuxiliar = 0;
 
 boolean novoAviso = false;
+
+boolean LoRaConectado = false;
+
+boolean ausenciaAgua = false;
+
+double  volume = 0;
+uint32_t ultimoFluxo = 0;
+uint32_t ultimaTemperatura = 0;
+uint32_t ultimaPressao = 0;
 
 void logAviso(uint16_t _codigo) {
   novoAviso = true;
@@ -429,6 +439,11 @@ void enviaLora(String _pacote) {
   LoRa.beginPacket();
   LoRa.print(_pacote);
   LoRa.endPacket();
+
+  #if DEBUG
+  Serial.print("Enviado via LoRa: ");
+  Serial.println(_pacote);
+  #endif
 }
 
 boolean verificaPacoteLoRa(String _pacote) {
@@ -655,7 +670,7 @@ void displayInfo() {
     for (uint8_t _i = 0; _i < _size; _i++) {
       boolean _erro = false;
       uint8_t _tipo = avisos[_i] >> 12;
-      if (_tipo >= 0x2) {
+      if (_tipo >= 0x3) {
         _erro = true;
       }
 
@@ -700,19 +715,19 @@ void displayInfo() {
 
     switch (_i) {
       case 0:
-        volumeLCD(234567);
+        volumeLCD(uint32_t(volume / 100.00));
         break;
 
       case 1:
-        fluxoLCD(712, 14); // inicio em 14
+        fluxoLCD(ultimoFluxo, 14); // inicio em 14
         break;
 
       case 2:
-        temperaturaLCD(293, 29); // inicio em 29
+        temperaturaLCD(ultimaTemperatura, 29); // inicio em 29
         break;
 
       case 3:
-        pressaoLCD(53, 21); // inicio em 21
+        pressaoLCD(ultimaPressao, 21); // inicio em 21
         break;
     }
 
@@ -809,7 +824,6 @@ void setup() {
 
   delay(100);
   MAX.begin(MAX35103INT, MAX35103RST, MAX35103CE);
-  //MAX.begin(I2C_SDA_EXT, I2C_SCL_EXT, SPI_SS_EXT);
 
   delay(100);
   if (!MAX.reset()) {
@@ -886,7 +900,7 @@ void setup() {
   digitalWrite(LCD_LED, LOW);
   delay(100);
 
-  /*LoRa.setPins(LoRaSS, LoRaRST, LoRaDIO0);
+  LoRa.setPins(LoRaSS, LoRaRST, LoRaDIO0);
 
   uint8_t _timeout = 0;
   while (!LoRa.begin(868E6) && _timeout < 5) {
@@ -895,42 +909,31 @@ void setup() {
   }
 
   if (_timeout >= 5) {
+    
     logAviso(0x2005);
 
     #if DEBUG
     Serial.println(F("Falha ao iniciar modulo LoRa!"));
     #endif
   }
-  #if DEBUG
   else {
+    LoRaConectado = true;
+
+    #if DEBUG
     Serial.println(F("Modulo LoRa iniciado!"));
+    #endif
   }
-  #endif
 
   LoRa.setTxPower(20);
 
   // Change sync word (0xAF) to match the receiver
   // The sync word assures you don't get LoRa messages from other LoRa transceivers
   // ranges from 0-0xFF
-  LoRa.setSyncWord(0xAF);*/
+  LoRa.setSyncWord(0xAF);
 
   #if DEBUG
   Serial.println(F("Setup OK!"));
   #endif
-
-  ///////////////////////////////////////////////////////////////////////////////////////////
-  #if DEBUG
-  Serial.print("Avisos: ");
-  for (uint8_t _i = 0; _i < qtdAvisos; _i++) {
-    if (avisos[_i]) {
-      Serial.print("0x");
-      Serial.print(avisos[_i], HEX);
-      Serial.print(" ");
-    }
-  }
-  Serial.println("");
-  #endif
-  ///////////////////////////////////////////////////////////////////////////////////////////
 
   digitalWrite(LCD_LED, HIGH);
   delay(100);
@@ -939,59 +942,112 @@ void setup() {
 
 void loop() {
   if (millis() > leituraAnterior + 1000) {
+    leituraAnterior = millis();
     
     float _fluxo = 0.0;
     if (MAX.fluxoToFDIff(&_fluxo)) {
 
+      volume += _fluxo / 60.00; // volume em litros
+      ultimoFluxo = uint32_t(_fluxo * 10.0);
+      
       float _fluxoLH = _fluxo * 60.0;
 
-      /*String _pacote = "{o: \"t\", f: [";
-      _pacote.concat(String(_fluxoLH, 2));
-      _pacote.concat("]}");
-      enviaLora(_pacote);*/
+      if (LoRaConectado) {
+        String _pacote = "{o: \"t\", f: [";
+        _pacote.concat(String(_fluxoLH, 2));
+        _pacote.concat("]}");
+        enviaLora(_pacote);
+      }
 
       #if DEBUG
-      Serial.print("\n_fluxo: ");
+      Serial.print("volume L: ");
+      Serial.println(volume, 6);
+      Serial.print("_fluxo: ");
       Serial.println(_fluxo);
       Serial.print("_fluxoLH: ");
       Serial.println(_fluxoLH);
       #endif
     }
     else {
-      //enviaLora("{o: \"t\",f: [00.00]}");
+      if (LoRaConectado) {
+        enviaLora("{o: \"t\",f: [00.00]}");
+      }
 
       #if DEBUG
       Serial.println(F("Erro ao ler fluxo!"));
       #endif
     }
+  }
 
-    /*float _temperatura1 = 0.0;
-    if (MAX.temperatura(1, &_temperatura1)) {
-      Serial.print(F("Temp1: "));
+  if (millis() > leituraAnteriorAuxiliar + 10000) {
+    leituraAnteriorAuxiliar = millis();
+
+    delay(250);
+    float _temperatura1 = 0.0;
+    boolean _tempOK = MAX.temperatura(1, &_temperatura1);
+    
+    ultimaTemperatura = uint32_t(_temperatura1 * 10.0);
+    
+    #if DEBUG
+    if (_tempOK) {
+      Serial.print(F("_temperatura1: "));
       Serial.println(_temperatura1, 1);
     }
     else {
       Serial.println(F("Erro ao ler temperatura!"));
-    }*/
+    }
+    #endif
 
-    /*uint32_t _pressaoAnalog = analogRead(pressaoPin);
-    uint32_t _pressaoBarInt = map(_pressaoAnalog, 95, 870, 0, 690);
-    float _pressaoBar = (float)_pressaoBarInt / 100.0;
+    uint32_t _pressaoAnalog = analogRead(pressaoPin);
+    float _pressaoPSI = ((float)_pressaoAnalog - 90.086) / 4.1137;
+    float _pressaoBar = _pressaoPSI / 14.504;
 
-    Serial.print("_pressao: ");
-    Serial.print(_pressaoAnalog);
-    Serial.print(" | ");
+    ultimaPressao = uint32_t(_pressaoBar * 10.0);
+
+    #if DEBUG
+    Serial.print("pressao: ");
+    Serial.print(_pressaoPSI);
+    Serial.print(" PSI | ");
     Serial.print(_pressaoBar);
     Serial.println(" bar");
+    #endif
 
-    if (_pressaoAnalog < 100) {
+    if (!ausenciaAgua && _pressaoBar < 0.25) {
+      ausenciaAgua = true;
+      logAviso(0x200E);
+      #if DEBUG
       Serial.println(F("### Ausencia de agua! ###"));
-    }*/
+      #endif
+    }
 
-    leituraAnterior = millis();
+    if (ausenciaAgua && _pressaoBar >= 0.25) {
+      ausenciaAgua = false;
+      logAviso(0x100F);
+      #if DEBUG
+      Serial.println(F("Pressao normalizada!"));
+      #endif
+    }
+
+    if (LoRaConectado) {
+      String _pacote = "{o: \"t\", t: [";
+      
+      if (_tempOK) {
+        _pacote.concat(String(_temperatura1, 2));
+      }
+      else {
+        _pacote.concat("00.00");
+      }
+      _pacote.concat("], p: [");
+
+      _pacote.concat(String(_pressaoBar, 2));
+      
+      _pacote.concat("]}");
+
+      enviaLora(_pacote);
+    }
   }
 
-  /*if (LoRa.parsePacket()) {
+  if (LoRaConectado && LoRa.parsePacket()) {
     recebeLora();
   }
 
@@ -1003,15 +1059,15 @@ void loop() {
     }
   }
 
-  if (novoAviso) {
+  if (LoRaConectado && novoAviso) {
     #if DEBUG
-    Serial.print(F("Enviando avisos: "));
+    Serial.println(F("Enviando avisos..."));
     #endif
     
     enviaAvisosLoRa();
     limpaAvisos();
     novoAviso = false;
-  }*/
+  }
 
   delay(10);
 }
