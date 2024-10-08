@@ -74,7 +74,8 @@ void MAX35103::config() {
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
   delay(100);
-  writeRegister16(MAX35103_CLB_CTR_W, 0x0240);
+  //writeRegister16(MAX35103_CLB_CTR_W, 0x0240); // Event Timing de ciclo unico
+  writeRegister16(MAX35103_CLB_CTR_W, 0x0340); // Event Timing em ciclo continuo
   delay(100);
 
   writeRegister16(0x43, 0x0080);
