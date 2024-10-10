@@ -1,0 +1,15 @@
+0x1001: Inicio do programa
+0x3002: Erro no Reset do MAX35103
+0x3003: Erro no toFlash do MAX35103
+0x2004: Erro no initialize do MAX35103
+0x2005: Falha ao iniciar modulo LoRa
+0x2006: Falha ao ler mensagem recebida por LoRa
+0x2007: Falha: Pacote LoRa desconhecido!
+0x2008: Falha: Comando LoRa desconhecido!
+0x2009: Falha ao fechar valvula
+0x200A: Falha ao abrir valvula
+0x200B: Falha: Parametro ausente na mensagem recebida por LoRa
+0x200C: Falha! Tempo de abertura parcial incorreto ou nulo
+0x200D: Falha ao realizar abertura parcial da valvula
+0x200E: Ausencia de agua!
+0x100F: Presao da agua normalizada!
