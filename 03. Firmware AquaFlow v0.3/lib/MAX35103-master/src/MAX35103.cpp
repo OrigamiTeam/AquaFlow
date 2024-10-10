@@ -67,9 +67,9 @@ void MAX35103::config() {
   writeRegister16(MAX35103_TOF7_W, 0x0048);
   delay(100);
 
-  writeRegister16(MAX35103_EVT_TMN1_W, 0x0000);
+  writeRegister16(MAX35103_EVT_TMN1_W, 0x39CF);
   delay(100);
-  writeRegister16(MAX35103_EVT_TMN2_W, 0x006B);
+  writeRegister16(MAX35103_EVT_TMN2_W, 0x580B);
   delay(100);
   
   writeRegister16(MAX35103_TOF_MES_W, 0x00E9);
@@ -366,6 +366,44 @@ boolean MAX35103::fluxoToFDIff(float *_fluxo, float *_ToFDiff) {
   *_ToFDiff = _ToF_Diff;
   *_fluxo = _fluxoAgua;
   return true;
+}
+
+void MAX35103::stopEVTMG() {
+  opcodeCommand(MAX35103_HALT);
+
+  //eliminar interrupcao #############################################################################################################
+}
+
+void MAX35103::startEVTMG1() {
+  opcodeCommand(MAX35103_EVTMG1);
+
+  //criar interrupcao #############################################################################################################
+}
+
+boolean MAX35103::verificaIntToFEVTMG() {
+  return interruptStatus(9);
+}
+
+float MAX35103::leFluxoToFDIffAVG() {
+  uint16_t _ToF_DiffIntAVG = readRegister16(0xE5);
+  uint16_t _ToF_DiffFracAVG = readRegister16(0xE6);
+  float _ToF_DiffAVG = ToF_Diff(_ToF_DiffIntAVG, _ToF_DiffFracAVG);
+  float _fluxo = fluxoAgua(_ToF_DiffAVG);
+  return _fluxo;
+}
+
+float MAX35103::leFluxoToFDIffAVG(float *_ToFDiffAVG) {
+  uint16_t _ToF_DiffIntAVG = readRegister16(0xE5);
+  uint16_t _ToF_DiffFracAVG = readRegister16(0xE6);
+  float _ToF_DiffAVG = ToF_Diff(_ToF_DiffIntAVG, _ToF_DiffFracAVG);
+  float _fluxo = fluxoAgua(_ToF_DiffAVG);
+
+  *_ToFDiffAVG = _ToF_DiffAVG;
+  return _fluxo;
+}
+
+boolean MAX35103::verificaIntTempEVTMG() {
+  return interruptStatus(8);
 }
 
 float MAX35103::registerTemp(uint16_t _TxInt, uint16_t _TxFrac) {

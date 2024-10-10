@@ -8,7 +8,7 @@
 #include "valvulaMotorDC.h"
 #include "displayST7565R.h"
 
-#define DEBUG false
+#define DEBUG true
 
 // Pino para botao com acesso externo
 #define btnPin 2
@@ -96,6 +96,8 @@ uint32_t ultimoFluxo = 0;
 uint32_t ultimaTemperatura = 0;
 uint32_t ultimaPressao = 0;
 
+unsigned long startEVTMGmillis = 0;
+
 void logAviso(uint16_t _codigo) {
   novoAviso = true;
 
@@ -174,11 +176,15 @@ void printConfigMAX() {
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBD);
-  Serial.print(F("TOF5 0xBD: 0x"));
+  Serial.print(F("TOF6 0xBD: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xBE);
-  Serial.print(F("TOF5 0xBE: 0x"));
+  Serial.print(F("TOF7 0xBE: 0x"));
+  Serial.println(_reg, HEX);
+
+  _reg = MAX.readRegister16(0xBF);
+  Serial.print(F("_reg 0xBF: 0x"));
   Serial.println(_reg, HEX);
 
   _reg = MAX.readRegister16(0xC0);
@@ -938,10 +944,53 @@ void setup() {
   digitalWrite(LCD_LED, HIGH);
   delay(100);
   digitalWrite(LCD_LED, LOW);
+
+  MAX.startEVTMG1();
+  startEVTMGmillis = millis();
+  #if DEBUG
+  Serial.print(F("startEVTMGmillis: "));
+  Serial.println(startEVTMGmillis);
+  #endif
 }
 
 void loop() {
-  if (millis() > leituraAnterior + 1000) {
+  
+  if (!digitalRead(MAX35103INT)) {
+    delay(50);
+    if (!digitalRead(MAX35103INT)) {
+      
+      #if DEBUG
+      Serial.print(millis() - startEVTMGmillis);
+      Serial.println("ms desde o envio");
+      #endif
+
+      if(MAX.verificaIntToFEVTMG()) {
+        float _fluxo = MAX.leFluxoToFDIffAVG();
+        #if DEBUG
+        Serial.print("_fluxo EVT: ");
+        Serial.println(_fluxo);
+        #endif
+        
+        /*if (LoRaConectado) {
+          String _pacote = "{o: \"t\", f EVT: [";
+          _pacote.concat(String(_fluxo, 2));
+          //_pacote.concat(String(_fluxoLH, 2));
+          _pacote.concat("]}");
+          enviaLora(_pacote);
+        }*/
+      }
+      else {
+        #if DEBUG
+        Serial.println("verificaIntToFEVTMG() false");
+        #endif
+      }
+
+    }
+  }
+
+
+
+  /*if (millis() > leituraAnterior + 1000) {
     leituraAnterior = millis();
     
     float _fluxo = 0.0;
@@ -950,11 +999,12 @@ void loop() {
       volume += _fluxo / 60.00; // volume em litros
       ultimoFluxo = uint32_t(_fluxo * 10.0);
       
-      float _fluxoLH = _fluxo * 60.0;
+      //float _fluxoLH = _fluxo * 60.0;
 
       if (LoRaConectado) {
         String _pacote = "{o: \"t\", f: [";
-        _pacote.concat(String(_fluxoLH, 2));
+        _pacote.concat(String(_fluxo, 2));
+        //_pacote.concat(String(_fluxoLH, 2));
         _pacote.concat("]}");
         enviaLora(_pacote);
       }
@@ -977,9 +1027,9 @@ void loop() {
       Serial.println(F("Erro ao ler fluxo!"));
       #endif
     }
-  }
+  }*/
 
-  if (millis() > leituraAnteriorAuxiliar + 10000) {
+  /*if (millis() > leituraAnteriorAuxiliar + 10000) {
     leituraAnteriorAuxiliar = millis();
 
     delay(250);
@@ -1045,9 +1095,9 @@ void loop() {
 
       enviaLora(_pacote);
     }
-  }
+  }*/
 
-  if (LoRaConectado && LoRa.parsePacket()) {
+  /*if (LoRaConectado && LoRa.parsePacket()) {
     recebeLora();
   }
 
@@ -1067,7 +1117,7 @@ void loop() {
     enviaAvisosLoRa();
     limpaAvisos();
     novoAviso = false;
-  }
+  }*/
 
   delay(10);
 }

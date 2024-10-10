@@ -13,6 +13,10 @@
 #define MAX35103_Reset 0x04
 #define MAX35103_Initialize 0x05
 #define MAX35103_ToFlash 0x06
+#define MAX35103_EVTMG1 0x07
+#define MAX35103_EVTMG2 0x08
+#define MAX35103_EVTMG3 0x09
+#define MAX35103_HALT 0x0A
 
 #define MAX35103_Flash_Read 0x90
 #define MAX35103_Flash_Write 0x10
@@ -54,6 +58,12 @@ class MAX35103 {
     boolean temperatura(uint8_t _sensor, float *_temperatura);
     boolean fluxoToFDIff(float *_fluxo);
     boolean fluxoToFDIff(float *_fluxo, float *_ToFDiff);
+    void stopEVTMG();
+    void startEVTMG1();
+    boolean verificaIntToFEVTMG();
+    boolean verificaIntTempEVTMG();
+    float leFluxoToFDIffAVG();
+    float leFluxoToFDIffAVG(float *_ToFDiffAVG);
 
     private:
     uint8_t _intPin = 0;
