@@ -960,30 +960,47 @@ void loop() {
     if (!digitalRead(MAX35103INT)) {
       
       #if DEBUG
+      Serial.println("");
       Serial.print(millis() - startEVTMGmillis);
       Serial.println("ms desde o envio");
       #endif
 
-      if(MAX.verificaIntToFEVTMG()) {
+      boolean _temp = false;
+      boolean _tof = false;
+      uint16_t intEVTMG = MAX.verificaIntEVTMG(&_temp, &_tof);
+
+      if(_temp) {
+        float _tempT1 = 0.0;
+        boolean _tempOK = MAX.tempT1AVG(&_tempT1);
+
+        ultimaTemperatura = uint32_t(_tempT1 * 10.0);
+    
+        #if DEBUG
+        if (_tempOK) {
+          Serial.print("_tempT1 EVT: ");
+          Serial.println(_tempT1, 1);
+        }
+        else {
+          Serial.println(F("Erro ao ler temperatura!"));
+        }
+        #endif
+
+      }
+
+      if(_tof) {
         float _fluxo = MAX.leFluxoToFDIffAVG();
         #if DEBUG
         Serial.print("_fluxo EVT: ");
         Serial.println(_fluxo);
         #endif
-        
-        /*if (LoRaConectado) {
-          String _pacote = "{o: \"t\", f EVT: [";
-          _pacote.concat(String(_fluxo, 2));
-          //_pacote.concat(String(_fluxoLH, 2));
-          _pacote.concat("]}");
-          enviaLora(_pacote);
-        }*/
+
       }
-      else {
-        #if DEBUG
-        Serial.println("verificaIntToFEVTMG() false");
-        #endif
+
+      #if DEBUG
+      if (intEVTMG & (1 << 15)) {
+        Serial.println("intEVTMG Timeout!");
       }
+      #endif
 
     }
   }

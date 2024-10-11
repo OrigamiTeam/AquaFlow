@@ -67,7 +67,7 @@ void MAX35103::config() {
   writeRegister16(MAX35103_TOF7_W, 0x0048);
   delay(100);
 
-  writeRegister16(MAX35103_EVT_TMN1_W, 0x39CF);
+  writeRegister16(MAX35103_EVT_TMN1_W, 0x3BCF);
   delay(100);
   writeRegister16(MAX35103_EVT_TMN2_W, 0x580B);
   delay(100);
@@ -263,6 +263,109 @@ void MAX35103::eraseFlash(uint16_t _address) {
   digitalWrite(_cePin, HIGH);
 }*/
 
+float MAX35103::registerTemp(uint16_t _TxInt, uint16_t _TxFrac) {
+  uint32_t _registerInt = (uint32_t)_TxInt * 250;
+  float _registerFrac = (float)_TxFrac * 3.814755;
+  _registerFrac = _registerFrac / 1000.0;
+  float _registerTemp = (float)_registerInt + _registerFrac;
+
+  return _registerTemp;
+}
+
+float MAX35103::temperaturaPT1000(float _R, float _R0) {
+  float _A = 3.9083E-3;
+  float _B = -5.775E-7;
+  
+  float _ratio = _R / _R0;
+
+  //T = (0.0-A + sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
+  float _T = 0.0 - _A; 
+  _T += sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
+  _T /= (2.0 * _B);
+
+  if(_T > 0 && _T < 200) { 
+    return _T; 
+  } 
+  
+  //T=  (0.0-A - sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
+  _T = 0.0 - _A; 
+  _T -= sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
+  _T /= (2.0 * _B); 
+  return _T; 
+}
+
+boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
+  if (_sensor == 1) {
+    opcodeCommand(MAX35103_Temperature);
+
+    unsigned long _millisInicio = millis();
+    while (digitalRead(_intPin)) {
+      delay(50);
+
+      if (millis() > _millisInicio + _timeout) {
+        return false;
+      }
+    }
+
+    // interruptStatus(15) indica timeout!
+    if (!interruptStatus(11)) {
+      return false;
+    }
+
+    uint16_t _TxInt = readRegister16(0xE7);
+    uint16_t _TxFrac = readRegister16(0xE8);
+    float _timeT1 = registerTemp(_TxInt, _TxFrac);
+
+    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+      return false;
+    }
+
+    _TxInt = readRegister16(0xEB);
+    _TxFrac = readRegister16(0xEC);
+    float _timeT3 = registerTemp(_TxInt, _TxFrac);
+
+    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+      return false;
+    }
+
+    float _temp = temperaturaPT1000(_timeT1, _timeT3);
+
+    *_temperatura = _temp;
+    return true;
+  }
+  /*else if (_sensor == 2) {
+    opcodeCommand(MAX35103_Temperature);
+
+    unsigned long _millisInicio = millis();
+    while (digitalRead(_intPin)) {
+      delay(50);
+
+      if (millis() > _millisInicio + _timeout) {
+        return false;
+      }
+    }
+
+    // interruptStatus(15) indica timeout!
+    if (!interruptStatus(11)) {
+      return false;
+    }
+
+    uint16_t _TxInt = readRegister16(0xE9);
+    uint16_t _TxFrac = readRegister16(0xEA);
+    float _timeT2 = registerTemp(_TxInt, _TxFrac);
+
+    _TxInt = readRegister16(0xED);
+    _TxFrac = readRegister16(0xEE);
+    float _timeT4 = registerTemp(_TxInt, _TxFrac);
+
+    float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
+
+    Serial.print("_temperatura2: ");
+    Serial.println(_temperatura2, 1);
+  }*/
+  return false;
+}
+
 float MAX35103::ToF_Diff(uint16_t _TOF_DIFFInt, uint16_t _TOF_DIFFFrac) {
   // Verificar MSB do _TOF_DIFFInt e sendo 1:
   // A - Inverter todos os demais bits do _TOF_DIFFInt
@@ -380,8 +483,34 @@ void MAX35103::startEVTMG1() {
   //criar interrupcao #############################################################################################################
 }
 
-boolean MAX35103::verificaIntToFEVTMG() {
-  return interruptStatus(9);
+uint16_t MAX35103::verificaIntEVTMG(boolean *_temp, boolean *_tof) {
+  uint16_t _status = readRegister16(MAX35103_INT_STATUS_R);
+  *_temp = _status & (1 << 8);
+  *_tof = _status & (1 << 9);
+  return _status;
+}
+
+boolean MAX35103::tempT1AVG(float *_temperatura) {
+  uint16_t _TxInt = readRegister16(0xF0);
+  uint16_t _TxFrac = readRegister16(0xF1);
+  float _timeT1 = registerTemp(_TxInt, _TxFrac);
+
+  if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+    return false;
+  }
+
+  _TxInt = readRegister16(0xF4);
+  _TxFrac = readRegister16(0xF5);
+  float _timeT3 = registerTemp(_TxInt, _TxFrac);
+
+  if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
+    return false;
+  }
+
+  float _temp = temperaturaPT1000(_timeT1, _timeT3);
+
+  *_temperatura = _temp;
+  return true;
 }
 
 float MAX35103::leFluxoToFDIffAVG() {
@@ -400,111 +529,4 @@ float MAX35103::leFluxoToFDIffAVG(float *_ToFDiffAVG) {
 
   *_ToFDiffAVG = _ToF_DiffAVG;
   return _fluxo;
-}
-
-boolean MAX35103::verificaIntTempEVTMG() {
-  return interruptStatus(8);
-}
-
-float MAX35103::registerTemp(uint16_t _TxInt, uint16_t _TxFrac) {
-  uint32_t _registerInt = (uint32_t)_TxInt * 250;
-  float _registerFrac = (float)_TxFrac * 3.814755;
-  _registerFrac = _registerFrac / 1000.0;
-  float _registerTemp = (float)_registerInt + _registerFrac;
-
-  return _registerTemp;
-}
-
-float MAX35103::temperaturaPT1000(float _R, float _R0) {
-  float _A = 3.9083E-3;
-  float _B = -5.775E-7;
-  
-  float _ratio = _R / _R0;
-
-  //T = (0.0-A + sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
-  float _T = 0.0 - _A; 
-  _T += sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
-  _T /= (2.0 * _B);
-
-  if(_T > 0 && _T < 200) { 
-    return _T; 
-  } 
-  
-  //T=  (0.0-A - sqrt((A*A) - 4.0 * B * (1.0 - Ratio))) / 2.0 * B; 
-  _T = 0.0 - _A; 
-  _T -= sqrt((_A * _A) - 4.0 * _B * (1.0 - _ratio)); 
-  _T /= (2.0 * _B); 
-  return _T; 
-}
-
-boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
-  if (_sensor == 1) {
-    opcodeCommand(MAX35103_Temperature);
-
-    unsigned long _millisInicio = millis();
-    while (digitalRead(_intPin)) {
-      delay(50);
-
-      if (millis() > _millisInicio + _timeout) {
-        return false;
-      }
-    }
-
-    // interruptStatus(15) indica timeout!
-    if (!interruptStatus(11)) {
-      return false;
-    }
-
-    uint16_t _TxInt = readRegister16(0xE7);
-    uint16_t _TxFrac = readRegister16(0xE8);
-    float _timeT1 = registerTemp(_TxInt, _TxFrac);
-
-    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
-      return false;
-    }
-
-    _TxInt = readRegister16(0xEB);
-    _TxFrac = readRegister16(0xEC);
-    float _timeT3 = registerTemp(_TxInt, _TxFrac);
-
-    if (_TxInt == 0xFFFF && _TxFrac == 0xFFFF) {
-      return false;
-    }
-
-    float _temp = temperaturaPT1000(_timeT1, _timeT3);
-
-    *_temperatura = _temp;
-    return true;
-  }
-  /*else if (_sensor == 2) {
-    opcodeCommand(MAX35103_Temperature);
-
-    unsigned long _millisInicio = millis();
-    while (digitalRead(_intPin)) {
-      delay(50);
-
-      if (millis() > _millisInicio + _timeout) {
-        return false;
-      }
-    }
-
-    // interruptStatus(15) indica timeout!
-    if (!interruptStatus(11)) {
-      return false;
-    }
-
-    uint16_t _TxInt = readRegister16(0xE9);
-    uint16_t _TxFrac = readRegister16(0xEA);
-    float _timeT2 = registerTemp(_TxInt, _TxFrac);
-
-    _TxInt = readRegister16(0xED);
-    _TxFrac = readRegister16(0xEE);
-    float _timeT4 = registerTemp(_TxInt, _TxFrac);
-
-    float _temperatura2 = temperaturaPT1000(_timeT2, _timeT4);
-
-    Serial.print("_temperatura2: ");
-    Serial.println(_temperatura2, 1);
-  }*/
-  return false;
 }

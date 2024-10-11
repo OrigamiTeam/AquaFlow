@@ -60,8 +60,8 @@ class MAX35103 {
     boolean fluxoToFDIff(float *_fluxo, float *_ToFDiff);
     void stopEVTMG();
     void startEVTMG1();
-    boolean verificaIntToFEVTMG();
-    boolean verificaIntTempEVTMG();
+    uint16_t verificaIntEVTMG(boolean *_temp, boolean *_tof);
+    boolean tempT1AVG(float *_temperatura);
     float leFluxoToFDIffAVG();
     float leFluxoToFDIffAVG(float *_ToFDiffAVG);
 
