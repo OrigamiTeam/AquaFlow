@@ -82,9 +82,6 @@ displayST7565R LCD;
 
 uint16_t avisos[qtdAvisos];
 
-unsigned long leituraAnterior = 0;
-unsigned long leituraAnteriorAuxiliar = 0;
-
 boolean novoAviso = false;
 
 boolean LoRaConectado = false;
@@ -985,136 +982,89 @@ void loop() {
         }
         #endif
 
+        uint32_t _pressaoAnalog = analogRead(pressaoPin);
+        float _pressaoPSI = ((float)_pressaoAnalog - 90.086) / 4.1137;
+        float _pressaoBar = _pressaoPSI / 14.504;
+
+        ultimaPressao = uint32_t(_pressaoBar * 10.0);
+
+        #if DEBUG
+        Serial.print("pressao: ");
+        Serial.print(_pressaoPSI);
+        Serial.print(" PSI | ");
+        Serial.print(_pressaoBar);
+        Serial.println(" bar");
+        #endif
+
+        if (!ausenciaAgua && _pressaoBar < 0.25) {
+          ausenciaAgua = true;
+          logAviso(0x200E);
+          #if DEBUG
+          Serial.println(F("### Ausencia de agua! ###"));
+          #endif
+        }
+
+        if (ausenciaAgua && _pressaoBar >= 0.25) {
+          ausenciaAgua = false;
+          logAviso(0x100F);
+          #if DEBUG
+          Serial.println(F("Pressao normalizada!"));
+          #endif
+        }
+
+        if (LoRaConectado) {
+          String _pacote = "{o: \"t\", t: [";
+          if (_tempOK) {
+            _pacote.concat(String(_tempT1, 2));
+          }
+          else {
+            _pacote.concat("00.00");
+          }
+          _pacote.concat("], p: [");
+          _pacote.concat(String(_pressaoBar, 2));
+          _pacote.concat("]}");
+
+          enviaLora(_pacote);
+        }
       }
 
       if(_tof) {
         float _fluxo = MAX.leFluxoToFDIffAVG();
+
+        volume += _fluxo / 60.00; // volume em litros
+        ultimoFluxo = uint32_t(_fluxo * 10.0);
+
+        if (LoRaConectado) {
+          String _pacote = "{o: \"t\", f: [";
+          _pacote.concat(String(_fluxo, 2));
+          //_pacote.concat(String(_fluxoLH, 2));
+          _pacote.concat("]}");
+          enviaLora(_pacote);
+        }
+
         #if DEBUG
         Serial.print("_fluxo EVT: ");
         Serial.println(_fluxo);
         #endif
 
       }
-
-      #if DEBUG
+      
       if (intEVTMG & (1 << 15)) {
+
+        if (LoRaConectado) {
+          enviaLora("{o: \"t\",f: [00.00]}");
+        }
+        
+        #if DEBUG
         Serial.println("intEVTMG Timeout!");
+        #endif
       }
-      #endif
+      
 
     }
   }
 
-
-
-  /*if (millis() > leituraAnterior + 1000) {
-    leituraAnterior = millis();
-    
-    float _fluxo = 0.0;
-    if (MAX.fluxoToFDIff(&_fluxo)) {
-
-      volume += _fluxo / 60.00; // volume em litros
-      ultimoFluxo = uint32_t(_fluxo * 10.0);
-      
-      //float _fluxoLH = _fluxo * 60.0;
-
-      if (LoRaConectado) {
-        String _pacote = "{o: \"t\", f: [";
-        _pacote.concat(String(_fluxo, 2));
-        //_pacote.concat(String(_fluxoLH, 2));
-        _pacote.concat("]}");
-        enviaLora(_pacote);
-      }
-
-      #if DEBUG
-      Serial.print("volume L: ");
-      Serial.println(volume, 6);
-      Serial.print("_fluxo: ");
-      Serial.println(_fluxo);
-      Serial.print("_fluxoLH: ");
-      Serial.println(_fluxoLH);
-      #endif
-    }
-    else {
-      if (LoRaConectado) {
-        enviaLora("{o: \"t\",f: [00.00]}");
-      }
-
-      #if DEBUG
-      Serial.println(F("Erro ao ler fluxo!"));
-      #endif
-    }
-  }*/
-
-  /*if (millis() > leituraAnteriorAuxiliar + 10000) {
-    leituraAnteriorAuxiliar = millis();
-
-    delay(250);
-    float _temperatura1 = 0.0;
-    boolean _tempOK = MAX.temperatura(1, &_temperatura1);
-    
-    ultimaTemperatura = uint32_t(_temperatura1 * 10.0);
-    
-    #if DEBUG
-    if (_tempOK) {
-      Serial.print(F("_temperatura1: "));
-      Serial.println(_temperatura1, 1);
-    }
-    else {
-      Serial.println(F("Erro ao ler temperatura!"));
-    }
-    #endif
-
-    uint32_t _pressaoAnalog = analogRead(pressaoPin);
-    float _pressaoPSI = ((float)_pressaoAnalog - 90.086) / 4.1137;
-    float _pressaoBar = _pressaoPSI / 14.504;
-
-    ultimaPressao = uint32_t(_pressaoBar * 10.0);
-
-    #if DEBUG
-    Serial.print("pressao: ");
-    Serial.print(_pressaoPSI);
-    Serial.print(" PSI | ");
-    Serial.print(_pressaoBar);
-    Serial.println(" bar");
-    #endif
-
-    if (!ausenciaAgua && _pressaoBar < 0.25) {
-      ausenciaAgua = true;
-      logAviso(0x200E);
-      #if DEBUG
-      Serial.println(F("### Ausencia de agua! ###"));
-      #endif
-    }
-
-    if (ausenciaAgua && _pressaoBar >= 0.25) {
-      ausenciaAgua = false;
-      logAviso(0x100F);
-      #if DEBUG
-      Serial.println(F("Pressao normalizada!"));
-      #endif
-    }
-
-    if (LoRaConectado) {
-      String _pacote = "{o: \"t\", t: [";
-      
-      if (_tempOK) {
-        _pacote.concat(String(_temperatura1, 2));
-      }
-      else {
-        _pacote.concat("00.00");
-      }
-      _pacote.concat("], p: [");
-
-      _pacote.concat(String(_pressaoBar, 2));
-      
-      _pacote.concat("]}");
-
-      enviaLora(_pacote);
-    }
-  }*/
-
-  /*if (LoRaConectado && LoRa.parsePacket()) {
+  if (LoRaConectado && LoRa.parsePacket()) {
     recebeLora();
   }
 
@@ -1134,7 +1084,7 @@ void loop() {
     enviaAvisosLoRa();
     limpaAvisos();
     novoAviso = false;
-  }*/
+  }
 
   delay(10);
 }

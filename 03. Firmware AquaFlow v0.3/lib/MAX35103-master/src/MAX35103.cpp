@@ -307,7 +307,6 @@ boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
       }
     }
 
-    // interruptStatus(15) indica timeout!
     if (!interruptStatus(11)) {
       return false;
     }
@@ -345,7 +344,6 @@ boolean MAX35103::temperatura(uint8_t _sensor, float *_temperatura) {
       }
     }
 
-    // interruptStatus(15) indica timeout!
     if (!interruptStatus(11)) {
       return false;
     }
@@ -430,7 +428,6 @@ boolean MAX35103::fluxoToFDIff(float *_fluxo) {
     }
   }
 
-  // interruptStatus(15) indica timeout!
   if (!interruptStatus(12)) {
     return false;
   }
@@ -456,7 +453,6 @@ boolean MAX35103::fluxoToFDIff(float *_fluxo, float *_ToFDiff) {
     }
   }
 
-  // interruptStatus(15) indica timeout!
   if (!interruptStatus(12)) {
     return false;
   }
