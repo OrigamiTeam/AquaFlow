@@ -8,7 +8,7 @@
 #include "valvulaMotorDC.h"
 #include "displayST7565R.h"
 
-#define DEBUG true
+#define DEBUG false
 
 // Pino para botao com acesso externo
 #define btnPin 2
