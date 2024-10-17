@@ -93,7 +93,8 @@ uint32_t ultimoFluxo = 0;
 uint32_t ultimaTemperatura = 0;
 uint32_t ultimaPressao = 0;
 
-unsigned long startEVTMGmillis = 0;
+float fluxoMedido[15] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+uint8_t indiceFluxo = 0;
 
 void logAviso(uint16_t _codigo) {
   novoAviso = true;
@@ -510,14 +511,14 @@ void recebeLora() {
 
   if (verificaPacoteLoRa(_LoRaData)) {
     
-    int _indiceComando = _LoRaData.indexOf("c:");
+    int _indiceComando = _LoRaData.indexOf("\"c\":");
     if (_indiceComando != -1) {
 
       uint8_t _valorInt = leValorInt(_LoRaData, _indiceComando);
       if (_valorInt == 1) {
         if(valvula.fecha()) {
 
-          enviaLora("{c:1,p:\"ok\"}");
+          enviaLora("{\"c\":1, \"p\":\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Fechada!"));
@@ -534,7 +535,7 @@ void recebeLora() {
       else if (_valorInt == 2) {
         if(valvula.abre()) {
 
-          enviaLora("{c:2,p:\"ok\"}");
+          enviaLora("{\"c\":2, \"p\":\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Aberta!"));
@@ -550,7 +551,7 @@ void recebeLora() {
       }
       else if (_valorInt == 3) {
 
-        int _indiceComandoP = _LoRaData.indexOf("p:");
+        int _indiceComandoP = _LoRaData.indexOf("\"p\":");
         if (_indiceComandoP != -1) {
 
           uint32_t _valorIntP = leValorInt(_LoRaData, _indiceComandoP);
@@ -558,7 +559,7 @@ void recebeLora() {
 
             if(valvula.abreParcial(_valorIntP)) {
 
-              enviaLora("{c:3,p:\"ok\"}");
+              enviaLora("{\"c\":3, \"p\":\"ok\"}");
 
               #if DEBUG
               Serial.println(F("Valvula com Abertura Parcial!"));
@@ -625,7 +626,7 @@ void enviaAvisosLoRa() {
   }
 
   if (_size) {
-    String _lora = "{o:\"i\",t:[";
+    String _lora = "{\"o\": \"i\", \"t\": [";
 
     for (uint8_t _i = 0; _i < _size; _i++) {
       _lora.concat("0x");
@@ -943,11 +944,6 @@ void setup() {
   digitalWrite(LCD_LED, LOW);
 
   MAX.startEVTMG1();
-  startEVTMGmillis = millis();
-  #if DEBUG
-  Serial.print(F("startEVTMGmillis: "));
-  Serial.println(startEVTMGmillis);
-  #endif
 }
 
 void loop() {
@@ -956,15 +952,24 @@ void loop() {
     delay(50);
     if (!digitalRead(MAX35103INT)) {
       
-      #if DEBUG
-      Serial.println("");
-      Serial.print(millis() - startEVTMGmillis);
-      Serial.println("ms desde o envio");
-      #endif
-
-      boolean _temp = false;
       boolean _tof = false;
+      boolean _temp = false;
       uint16_t intEVTMG = MAX.verificaIntEVTMG(&_temp, &_tof);
+
+      if(_tof) {
+        float _fluxo = MAX.leFluxoToFDIffAVG();
+
+        volume += (double)_fluxo / 10.00; // volume em litros
+        ultimoFluxo = uint32_t(_fluxo * 10.0);
+
+        fluxoMedido[indiceFluxo] = _fluxo;
+        indiceFluxo++;
+
+        #if DEBUG
+        Serial.print("_fluxo: ");
+        Serial.println(_fluxo);
+        #endif
+      }
 
       if(_temp) {
         float _tempT1 = 0.0;
@@ -1013,46 +1018,36 @@ void loop() {
         }
 
         if (LoRaConectado) {
-          String _pacote = "{o: \"t\", t: [";
+          String _pacote = "{\"o\": \"t\", \"v\": [";
+          _pacote.concat(String(volume, 0));
+          _pacote.concat("], \"f\": [");
+          for (uint8_t _i = 0; _i < indiceFluxo; _i++) {
+            _pacote.concat(String(fluxoMedido[_i], 2));
+            if (_i < indiceFluxo - 1) {
+              _pacote.concat(", ");
+            }
+            fluxoMedido[_i] = 0.0;
+          }
+          indiceFluxo = 0;
+          _pacote.concat("], \"t\": [");
           if (_tempOK) {
             _pacote.concat(String(_tempT1, 2));
           }
           else {
-            _pacote.concat("00.00");
+            _pacote.concat("0.00");
           }
-          _pacote.concat("], p: [");
+          _pacote.concat("], \"p\": [");
           _pacote.concat(String(_pressaoBar, 2));
           _pacote.concat("]}");
 
           enviaLora(_pacote);
         }
       }
-
-      if(_tof) {
-        float _fluxo = MAX.leFluxoToFDIffAVG();
-
-        volume += _fluxo / 60.00; // volume em litros
-        ultimoFluxo = uint32_t(_fluxo * 10.0);
-
-        if (LoRaConectado) {
-          String _pacote = "{o: \"t\", f: [";
-          _pacote.concat(String(_fluxo, 2));
-          //_pacote.concat(String(_fluxoLH, 2));
-          _pacote.concat("]}");
-          enviaLora(_pacote);
-        }
-
-        #if DEBUG
-        Serial.print("_fluxo EVT: ");
-        Serial.println(_fluxo);
-        #endif
-
-      }
       
       if (intEVTMG & (1 << 15)) {
 
         if (LoRaConectado) {
-          enviaLora("{o: \"t\",f: [00.00]}");
+          enviaLora("{\"o\": \"t\", \"f\": [00.00]}");
         }
         
         #if DEBUG
