@@ -125,3 +125,45 @@ boolean valvulaMotorDC::abreParcial(unsigned long _tempoMilis) {
   digitalWrite(_motorSleepPin, LOW);
   return true;
 }
+
+void valvulaMotorDC::abrir() {
+  digitalWrite(_motorSleepPin, HIGH);
+  delay(10);
+  digitalWrite(_motorIN1Pin, LOW);
+  digitalWrite(_motorIN2Pin, HIGH);
+}
+
+void valvulaMotorDC::fechar() {
+  digitalWrite(_motorSleepPin, HIGH);
+  delay(10);
+  digitalWrite(_motorIN1Pin, HIGH);
+  digitalWrite(_motorIN2Pin, LOW);
+}
+
+void valvulaMotorDC::desligarMotor() {
+  digitalWrite(_motorIN1Pin, LOW);
+  digitalWrite(_motorIN2Pin, LOW);
+  digitalWrite(_motorSleepPin, LOW);
+}
+
+boolean valvulaMotorDC::verificaValvulaAberta() {
+  if(!digitalRead(_SW1Pin)) {
+    delay(20);
+    if (!digitalRead(_SW1Pin)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+boolean valvulaMotorDC::verificaValvulaFechada() {
+  if(!digitalRead(_SW2Pin)) {
+    delay(20);
+    if (!digitalRead(_SW2Pin)) {
+      return true;
+    }
+  }
+
+  return false;
+}
