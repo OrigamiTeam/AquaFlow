@@ -108,10 +108,6 @@ unsigned long millisAnteriorDisplay = 0;
 
 boolean btnPressionado = false;
 
-boolean abrindoValvula = false;
-boolean fechandoValvula = false;
-unsigned long millisAnteriorValvula = 0;
-
 void logAviso(uint16_t _codigo) {
   novoAviso = true;
 
@@ -532,21 +528,9 @@ void recebeLora() {
 
       uint8_t _valorInt = leValorInt(_LoRaData, _indiceComando);
       if (_valorInt == 1) {
-        if (valvula.verificaValvulaFechada()) {
-          enviaLora("{\"c\":1, \"p\":\"ok\"}");
-          #if DEBUG
-          Serial.println(F("Valvula Fechada!"));
-          #endif
-        }
-        else {
-          valvula.fechar();
-          millisAnteriorValvula = millis();
-          fechandoValvula = true;
-        }
-          
-        /*if(valvula.fecha()) {
+        if(valvula.fecha()) {
 
-          enviaLora("{\"c\":1, \"p\":\"ok\"}");
+          enviaLora("{c:1,p:\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Fechada!"));
@@ -558,24 +542,12 @@ void recebeLora() {
           #if DEBUG
           Serial.println(F("Falha ao fechar valvula!"));
           #endif
-        }*/
+        }
       }
       else if (_valorInt == 2) {
-        if (valvula.verificaValvulaAberta()) {
-          enviaLora("{\"c\":2, \"p\":\"ok\"}");
-          #if DEBUG
-          Serial.println(F("Valvula Aberta!"));
-          #endif
-        }
-        else {
-          valvula.abrir();
-          millisAnteriorValvula = millis();
-          abrindoValvula = true;
-        }
-        
-        /*if(valvula.abre()) {
+        if(valvula.abre()) {
 
-          enviaLora("{\"c\":2, \"p\":\"ok\"}");
+          enviaLora("{c:2,p:\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Aberta!"));
@@ -587,7 +559,7 @@ void recebeLora() {
           #if DEBUG
           Serial.println(F("Falha ao abrir valvula!"));
           #endif
-        }*/
+        }
       }
       else if (_valorInt == 3) {
 
@@ -798,45 +770,6 @@ void setup() {
   digitalWrite(LCD_LED, HIGH);
   delay(100);
   digitalWrite(LCD_LED, LOW);
-
-  /*// TESTE DISPLAY LCD
-  //digitalWrite(LCD_LED, HIGH);
-  //delay(100);
-
-  while (true) {
-    avisoLCD(404, false, 15);
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-
-    avisoLCD(500, true, 15);
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-
-    volumeLCD(234567);
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-
-    fluxoLCD(712, 14); // inicio em 14
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-
-    temperaturaLCD(293, 29); // inicio em 29
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-
-    pressaoLCD(53, 21); // inicio em 21
-    delay(3000);
-    LCD.clear(0, 128);
-    delay(1);
-  }
-  
-  digitalWrite(LCD_LED, LOW);
-  */// TESTE DISPLAY
 
   pinMode(btnPin, INPUT);
   //digitalWrite(btnPin, HIGH); // Pullup externo
@@ -1077,13 +1010,7 @@ void loop() {
         Serial.println("intEVTMG Timeout!");
         #endif
       }
-      
-
     }
-  }
-
-  if (LoRaConectado && LoRa.parsePacket()) {
-    recebeLora();
   }
 
   if (!btnPressionado && !digitalRead(btnPin)) {
@@ -1108,37 +1035,20 @@ void loop() {
     }
   }
 
-  if (millisAnteriorValvula) {
-    if (millis() > millisAnteriorValvula + timeoutValvula) {
-      valvula.desligarMotor();
-      millisAnteriorValvula = 0;
-      if (fechandoValvula) {
-        logAviso(0x2009);
-        #if DEBUG
-        Serial.println(F("Falha ao fechar valvula!"));
-        #endif
-        fechandoValvula = false;
-      }
-      if (abrindoValvula) {
-        logAviso(0x200A);
-        #if DEBUG
-        Serial.println(F("Falha ao abrir valvula!"));
-        #endif
-        abrindoValvula = false;
-      }
+  if (LoRaConectado) {
+    if (LoRa.parsePacket()) {
+      recebeLora();
     }
-  }
-
-  ////////////////////////////////// interrupt para SW da valvula
-
-  if (LoRaConectado && novoAviso) {
-    #if DEBUG
-    Serial.println(F("Enviando avisos..."));
-    #endif
     
-    enviaAvisosLoRa();
-    limpaAvisos();
-    novoAviso = false;
+    if (novoAviso) {
+      #if DEBUG
+      Serial.println(F("Enviando avisos..."));
+      #endif
+      
+      enviaAvisosLoRa();
+      limpaAvisos();
+      novoAviso = false;
+    }
   }
 
   delay(10);

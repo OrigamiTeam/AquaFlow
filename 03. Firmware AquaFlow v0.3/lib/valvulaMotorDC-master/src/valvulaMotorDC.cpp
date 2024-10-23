@@ -2,12 +2,12 @@
 
 valvulaMotorDC::valvulaMotorDC() {}
 
-void valvulaMotorDC::begin(uint8_t SW1, uint8_t SW2, uint8_t sleep, uint8_t IN1, uint8_t IN2) {
-  _SW1Pin = SW1;
-  _SW2Pin = SW2;
-  _motorSleepPin = sleep;
-  _motorIN1Pin = IN1;
-  _motorIN2Pin = IN2;
+void valvulaMotorDC::begin(uint8_t _SW1, uint8_t _SW2, uint8_t _sleep, uint8_t _IN1, uint8_t _IN2) {
+  _SW1Pin = _SW1;
+  _SW2Pin = _SW2;
+  _motorSleepPin = _sleep;
+  _motorIN1Pin = _IN1;
+  _motorIN2Pin = _IN2;
 
   pinMode(_SW1Pin, INPUT);
   pinMode(_SW2Pin, INPUT);
@@ -46,6 +46,10 @@ boolean valvulaMotorDC::abre() {
     if(!digitalRead(_SW1Pin)) {
       delay(20);
       if (!digitalRead(_SW1Pin)) {
+        digitalWrite(_motorIN1Pin, HIGH);
+        delay(500);
+
+        digitalWrite(_motorIN1Pin, LOW);
         digitalWrite(_motorIN2Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         _aguardar = false;
@@ -83,7 +87,11 @@ boolean valvulaMotorDC::fecha() {
     if(!digitalRead(_SW2Pin)) {
       delay(20);
       if (!digitalRead(_SW2Pin)) {
+        digitalWrite(_motorIN2Pin, HIGH);
+        delay(500);
+
         digitalWrite(_motorIN1Pin, LOW);
+        digitalWrite(_motorIN2Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         _aguardar = false;
       }
@@ -112,6 +120,10 @@ boolean valvulaMotorDC::abreParcial(unsigned long _tempoMilis) {
     if(!digitalRead(_SW1Pin)) {
       delay(20);
       if (!digitalRead(_SW1Pin)) {
+        digitalWrite(_motorIN1Pin, HIGH);
+        delay(500);
+
+        digitalWrite(_motorIN1Pin, LOW);
         digitalWrite(_motorIN2Pin, LOW);
         digitalWrite(_motorSleepPin, LOW);
         return false;
@@ -120,50 +132,11 @@ boolean valvulaMotorDC::abreParcial(unsigned long _tempoMilis) {
 
     delay(10);
   }
-  
+
+  digitalWrite(_motorIN1Pin, HIGH);
+  delay(500);
+  digitalWrite(_motorIN1Pin, LOW);
   digitalWrite(_motorIN2Pin, LOW);
   digitalWrite(_motorSleepPin, LOW);
   return true;
-}
-
-void valvulaMotorDC::abrir() {
-  digitalWrite(_motorSleepPin, HIGH);
-  delay(10);
-  digitalWrite(_motorIN1Pin, LOW);
-  digitalWrite(_motorIN2Pin, HIGH);
-}
-
-void valvulaMotorDC::fechar() {
-  digitalWrite(_motorSleepPin, HIGH);
-  delay(10);
-  digitalWrite(_motorIN1Pin, HIGH);
-  digitalWrite(_motorIN2Pin, LOW);
-}
-
-void valvulaMotorDC::desligarMotor() {
-  digitalWrite(_motorIN1Pin, LOW);
-  digitalWrite(_motorIN2Pin, LOW);
-  digitalWrite(_motorSleepPin, LOW);
-}
-
-boolean valvulaMotorDC::verificaValvulaAberta() {
-  if(!digitalRead(_SW1Pin)) {
-    delay(20);
-    if (!digitalRead(_SW1Pin)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-boolean valvulaMotorDC::verificaValvulaFechada() {
-  if(!digitalRead(_SW2Pin)) {
-    delay(20);
-    if (!digitalRead(_SW2Pin)) {
-      return true;
-    }
-  }
-
-  return false;
 }

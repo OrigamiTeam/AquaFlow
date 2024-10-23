@@ -79,9 +79,6 @@ class MAX35103 {
     float fluxoAgua(float _deltaToF);
     float registerTemp(uint16_t _TxInt, uint16_t _TxFrac);
     float temperaturaPT1000(float _R, float _R0);
-    //uint16_t readFlash16(uint16_t _address);
-    //void writeFlash16(uint16_t _address, uint16_t _value);
-    //void eraseFlash(uint16_t _address);
 };
 
 #endif

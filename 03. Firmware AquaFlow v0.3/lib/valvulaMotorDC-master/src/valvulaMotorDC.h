@@ -11,13 +11,6 @@ class valvulaMotorDC {
     boolean fecha();
     boolean abreParcial(unsigned long _tempoMilis);
 
-    void abrir();
-    void fechar();
-    void desligarMotor();
-
-    boolean verificaValvulaAberta();
-    boolean verificaValvulaFechada();
-
     private:
     uint8_t _SW1Pin = 0;
     uint8_t _SW2Pin = 0;
