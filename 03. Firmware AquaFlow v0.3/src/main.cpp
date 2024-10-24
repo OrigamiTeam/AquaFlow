@@ -530,7 +530,7 @@ void recebeLora() {
       if (_valorInt == 1) {
         if(valvula.fecha()) {
 
-          enviaLora("{c:1,p:\"ok\"}");
+          enviaLora("{\"c\":1, \"p\":\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Fechada!"));
@@ -547,7 +547,7 @@ void recebeLora() {
       else if (_valorInt == 2) {
         if(valvula.abre()) {
 
-          enviaLora("{c:2,p:\"ok\"}");
+          enviaLora("{\"c\":2, \"p\":\"ok\"}");
 
           #if DEBUG
           Serial.println(F("Valvula Aberta!"));
@@ -638,7 +638,7 @@ void enviaAvisosLoRa() {
   }
 
   if (_size) {
-    String _lora = "{\"o\": \"i\", \"t\": [";
+    String _lora = "{\"o\":\"a\", \"t\":[";
 
     for (uint8_t _i = 0; _i < _size; _i++) {
       _lora.concat("0x");

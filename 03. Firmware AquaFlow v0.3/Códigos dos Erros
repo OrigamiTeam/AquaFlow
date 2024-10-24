@@ -13,3 +13,6 @@
 0x200D: Falha ao realizar abertura parcial da valvula
 0x200E: Ausencia de agua!
 0x100F: Presao da agua normalizada!
+
+0x1FFE: Erro ao salvar payload (Reservado para Gateway enviar ao AquaFlow)
+0x1FFF: Sem payloads para enviar (Reservado para Gateway enviar ao AquaFlow)

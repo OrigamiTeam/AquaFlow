@@ -36,10 +36,59 @@ MQTTClient mqtt = MQTTClient(MQTT_BUFFER_SIZE);
 unsigned long millisReconectWiFi = 0;
 unsigned long millisReconectAWS = 0;
 
+#define qtdPayload 10
+String payloadMQTT[qtdPayload] = {"", "", "", "", "", "", "", "", "", ""};
+boolean payloadSalvo = true;
+
 void enviaLora(String _pacote) {
   LoRa.beginPacket();
   LoRa.print(_pacote);
   LoRa.endPacket();
+}
+
+void enviaPayloadLoRa() {
+  uint8_t _size = 0;
+  for (uint8_t _i = 0; _i < qtdPayload; _i++) {
+    if (payloadMQTT[_i].compareTo("") != 0) {
+      _size = _i + 1;
+    }
+    else {
+      break;
+    }
+  }
+
+  if (_size) {
+    for (uint8_t _i = 0; _i < _size; _i++) {
+      enviaLora(payloadMQTT[_i]);
+      #if DEBUG
+      Serial.print(F("Enviado payload: "));
+      Serial.println(payloadMQTT[_i]);
+      #endif
+      payloadMQTT[_i] = "";
+      delay(500);
+    }
+    #if DEBUG
+    Serial.println(F("Todos os payloads foram enviados!"));
+    #endif
+  }
+  else {
+    enviaLora(F("{\"o\":\"a\", \"t\":\"0x1FFF\"}"));
+    #if DEBUG
+    Serial.println(F("Sem payloads para enviar!"));
+    #endif
+  }
+}
+
+boolean salvaPayload(String _payload) {
+  for (uint8_t _i = 0; _i < qtdPayload; _i++) {
+    if (payloadMQTT[_i].compareTo("") == 0) {
+      payloadMQTT[_i] = _payload;
+      payloadSalvo = true;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void callbackMQTT(String &_topic, String &_payload) {
@@ -49,9 +98,110 @@ void callbackMQTT(String &_topic, String &_payload) {
   Serial.print("_payload: ");
   Serial.println(_payload);
   #endif
-  if (!_topic.compareTo(IOT_TOPIC_SUB)) {
+  if (!salvaPayload(_payload)) {
+    mqtt.publish(IOT_TOPIC_PUB, F("{\"o\":\"a\", \"t\":\"0x1FFE\"}"), false, 0);
+    
+    #if DEBUG
+    Serial.println(F("Erro ao salvar payload!"));
+    #endif
+  }
+
+  /*if (!_topic.compareTo(IOT_TOPIC_SUB)) {
     enviaLora(_payload);
     Serial.println("Enviado LoRa!");
+  }*/
+}
+
+boolean verificaPacoteLoRa(String _pacote) {
+  uint8_t _tamanho = _pacote.length() + 1;
+  char _data[_tamanho];
+  _pacote.toCharArray(_data, _tamanho);
+
+  if (_data[0] == '{' && _data[_tamanho - 2] == '}') {
+    return true;
+  }
+  return false;
+}
+
+long leValorInt(String _pacote, uint8_t _indiceComando) {
+  uint8_t _tamanho = _pacote.length() + 1;
+  char _data[_tamanho];
+  _pacote.toCharArray(_data, _tamanho);
+
+  uint8_t _indiceSeparador = 0;
+  for (uint8_t _i = _indiceComando + 1; _i < _tamanho - 2; _i++) {
+    if (_data[_i] == ':') {
+      _indiceSeparador = _i;
+      break;
+    }
+  }
+
+  uint8_t _indiceValor = 0;
+  for (uint8_t _i = _indiceSeparador + 1; _i < _tamanho - 2; _i++) {
+    if (_data[_i] - '0' >= 0 && _data[_i] - '0' <= 9) {
+      _indiceValor = _i;
+      break;
+    }
+  }
+
+  String _valorString = "";
+  for (uint8_t _i = _indiceValor; _i < _tamanho - 2; _i++) {
+    if (_data[_i] - '0' >= 0 && _data[_i] - '0' <= 9) {
+      _valorString.concat(_data[_i] - '0');
+    }
+    else {
+      break;
+    }
+  }
+
+  return _valorString.toInt();
+}
+
+void recebeLora() {
+  #if DEBUG
+  Serial.print(F("Recebido LoRa: "));
+  #endif
+
+  String _LoRaData = "";
+  while (LoRa.available()) {
+    _LoRaData.concat(LoRa.readString());
+  }
+
+  #if DEBUG
+  Serial.print(_LoRaData); 
+  Serial.print(" | RSSI: ");
+  Serial.println(LoRa.packetRssi());
+  #endif
+
+  if (verificaPacoteLoRa(_LoRaData)) {
+    int _indiceComando = _LoRaData.indexOf("\"p\":");
+    if (_indiceComando != -1) {
+
+      uint8_t _valorInt = leValorInt(_LoRaData, _indiceComando);
+      if (_valorInt == 1) {
+        enviaPayloadLoRa();
+      }
+      else {
+        // #####################################################################
+        #if DEBUG
+        Serial.println(F("Falha! Comando LoRa desconhecido!"));
+        #endif
+      }
+    }
+    else {
+      // Se não reconhecer comando "p", encaminha pacote para MQTT
+      mqtt.publish(IOT_TOPIC_PUB, _LoRaData, false, 0);
+
+      #if DEBUG
+      Serial.println(F("Pacote LoRa encaminhado ao MQTT!"));
+      #endif
+    }
+  }
+  else {
+    // #####################################################################
+    #if DEBUG
+    Serial.println(F("Erro no pacote LoRa recebido!"));
+    #endif
   }
 }
 
@@ -131,7 +281,6 @@ void setup() {
 }
 
 void loop() {
-
   if (WiFi.status() != WL_CONNECTED) {
     if (millis() > millisReconectWiFi + 4000) {
       if (WiFi.reconnect() == ESP_OK) {
@@ -157,24 +306,9 @@ void loop() {
       }
     }
   }
-
+  
   if (LoRa.parsePacket()) {
-    #if DEBUG
-    Serial.print("Received packet: ");
-    #endif
-
-    String _LoRaData = "";
-    while (LoRa.available()) {
-      _LoRaData.concat(LoRa.readString());
-    }
-
-    #if DEBUG
-    Serial.print(_LoRaData); 
-    Serial.print(" | RSSI: ");
-    Serial.println(LoRa.packetRssi());
-    #endif
-
-    mqtt.publish(IOT_TOPIC_PUB, _LoRaData, false, 0);
+    recebeLora();
   }
 
   if (millis() > ultimoStatus + 500) {
